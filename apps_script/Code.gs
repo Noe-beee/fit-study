@@ -8,9 +8,12 @@
  *   part1         one row per part-1 submission (no e-mail address)
  *   contacts      pid + e-mail address only (kept apart from the answers)
  *   participants  pid, A/B order, status dates
- *   lists         the researcher pastes each participant's 20 shirts here (see SETUP.md)
+ *   lists         each participant's 20 shirts, written by the researcher's list tool (or pasted; see SETUP.md)
  *   part2         one row per part-2 submission
  *   screenouts    eligibility screen-outs (reason and date only)
+ *
+ * The researcher's list tool (tools/study_participant.py) uses the "tool" action, protected by a key that is stored
+ * only in this script's properties (Study → Set tool key) and in the researcher's Mac keychain.
  */
 
 const PART2_LINK_BASE = 'https://noe-beee.github.io/fit-study/';   // the study page address (SETUP.md step 4)
@@ -57,6 +60,7 @@ function doPost(e) {
     if (body.action === 'part1') return out_(savePart1_(body));
     if (body.action === 'part2') return out_(savePart2_(body));
     if (body.action === 'screenout') return out_(saveScreenout_(body));
+    if (body.action === 'tool') return out_(tool_(body));
     return out_({ ok: false, error: 'action' });
   } catch (err) {
     console.error(err);
@@ -156,6 +160,65 @@ function savePart2_(body) {
   return { ok: true };
 }
 
+/* ================= Researcher's list tool ================= */
+
+function tool_(body) {
+  const key = PropertiesService.getScriptProperties().getProperty('TOOL_KEY') || '';
+  if (key.length < 32 || String(body.key || '') !== key) return { ok: false, error: 'key' };
+  const pid = String(body.pid || '').trim().toLowerCase();
+  if (!/^[a-z0-9]{6,16}$/.test(pid)) return { ok: false, error: 'pid' };
+  const p = findRow_('participants', pid);
+  if (!p) return { ok: false, error: 'unknown pid' };
+  if (body.op === 'intake') return toolIntake_(pid);
+  if (body.op === 'lists') return toolLists_(pid, p, body.rows, body.replace === true);
+  return { ok: false, error: 'op' };
+}
+
+function toolIntake_(pid) {
+  // The part-1 answers needed for intake and the participant's photos (never the e-mail address).
+  const r = findRow_('part1', pid);
+  if (!r) return { ok: false, error: 'no part1 row' };
+  const answers = {};
+  ['width_cm', 'length_cm', 'size_label', 'worn_way', 'shop_url', 'photos'].forEach(function (k) { answers[k] = r.obj[k]; });
+  const photos = {};
+  const files = photoFolder_().getFiles();
+  while (files.hasNext()) {
+    const f = files.next(), m = f.getName().match(/^([a-z0-9]+)_(flat|label|worn|model)\.jpg$/);
+    if (m && m[1] === pid && !f.isTrashed()) photos[m[2]] = Utilities.base64Encode(f.getBlob().getBytes());
+  }
+  return { ok: true, answers: answers, photos: photos };
+}
+
+function toolLists_(pid, p, rows, replace) {
+  if (p.obj.part2_at) return { ok: false, error: 'part 2 already done' };
+  if (!Array.isArray(rows) || rows.length !== 20) return { ok: false, error: 'need 20 rows' };
+  const seen = {};
+  for (let i = 0; i < rows.length; i++) {
+    const x = rows[i];
+    const k = String(x.source) + ':' + Number(x.rank);
+    if (['model', 'popularity'].indexOf(String(x.source)) < 0 || !(Number(x.rank) >= 1 && Number(x.rank) <= 10) || seen[k])
+      return { ok: false, error: 'rows must be ranks 1-10 for model and popularity' };
+    if (!/^https:\/\/img01\.ztat\.net\//.test(String(x.img_packshot)) || !/^https:\/\/img01\.ztat\.net\//.test(String(x.img_model)))
+      return { ok: false, error: 'image links must be shop image links' };
+    seen[k] = true;
+  }
+  const sh = sheet_('lists');
+  const values = sh.getDataRange().getValues();
+  const c = values[0].map(String).indexOf('pid');
+  const existing = [];
+  for (let r = values.length - 1; r >= 1; r--) if (String(values[r][c]).trim().toLowerCase() === pid) existing.push(r + 1);
+  if (existing.length && !replace) return { ok: false, error: 'lists exist for this pid (use --replace)' };
+  existing.forEach(function (row) { sh.deleteRow(row); });          // bottom-up, so row numbers stay valid
+  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  const out = rows.map(function (x) {
+    const o = clean_(Object.assign({}, x, { pid: undefined }));
+    o.pid = pid;
+    return head.map(function (h) { return o[h] === undefined ? '' : o[h]; });
+  });
+  sh.getRange(sh.getLastRow() + 1, 1, out.length, head.length).setValues(out);
+  return { ok: true, written: out.length, replaced: existing.length };
+}
+
 /* ================= Researcher menu ================= */
 
 function onOpen() {
@@ -164,6 +227,8 @@ function onOpen() {
     .addSeparator()
     .addItem('Send part 2 link to the selected participant', 'sendPart2LinkSelected')
     .addItem('Delete photos of the selected participant', 'deletePhotosSelected')
+    .addSeparator()
+    .addItem('Set tool key', 'setToolKey')
     .addToUi();
 }
 
@@ -188,6 +253,16 @@ function sendPart2LinkSelected() {
   const p = findRow_('participants', pid);
   if (p) setCell_('participants', p.row, 'link_sent_at', new Date());
   ui.alert('Sent to ' + c.obj.email + '.');
+}
+
+function setToolKey() {
+  const ui = SpreadsheetApp.getUi();
+  const r = ui.prompt('Set tool key', 'Paste the key the list tool copied to your clipboard (Cmd + V), then OK.', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  const key = r.getResponseText().trim();
+  if (!/^[A-Za-z0-9_-]{32,}$/.test(key)) return ui.alert('That does not look like the key (32+ letters and digits). Nothing was changed.');
+  PropertiesService.getScriptProperties().setProperty('TOOL_KEY', key);
+  ui.alert('Tool key saved.');
 }
 
 function deletePhotosSelected() {

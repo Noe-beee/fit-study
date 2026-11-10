@@ -50,21 +50,16 @@ the same.
 
 ## 5. Each participant
 
-1. **Notification e-mail** "New part 1 submission: <pid>". Download the two photos from the Drive folder (names
-   start with the pid) into the thesis project as `data/intake/<pid>/raw/flat.jpg` and `raw/worn.jpg`.
-2. **Lists** (thesis project, `tools/study_participant.py`, about 10–15 minutes per participant):
-   - `prepare <pid> --width … --length … --size …` (values from the `part1` row; `--rotate-flat 90` if the flat lay
-     is sideways): intake and the five frozen AI label rounds (subagents);
+1. **Notification e-mail** "New part 1 submission: <pid>".
+2. **Lists** (thesis project, `tools/study_participant.py`, about 10–15 minutes per participant, run with Claude):
+   - `prepare <pid>`: fetches the measurements and photos from this Sheet and Drive (tool key), runs intake and the
+     five frozen AI label rounds (subagents); add `--rotate-flat 90` if the flat lay is sideways;
    - `rerank <pid>`: re-ranker candidates, then the one re-ranker run (subagent, Opus);
-   - `export <pid>`: both lists → `lists_<pid>.tsv`. Paste its 20 rows (without the header) into the `lists` tab:
-     10 with `source = model`, 10 with `source = popularity`.
+   - `export <pid>`: both lists, written straight into the `lists` tab (10 `model` + 10 `popularity` rows; refused if
+     the pid already has lists unless `--replace`, and once part 2 is done). Also saved as `lists_<pid>.tsv`.
 
-   | pid | source | rank | product_id | brand | name | price | img_packshot | img_model |
-   |---|---|---|---|---|---|---|---|---|
-   | k7f3q9ab | model | 1 | 00E21D00B-Q11 | Vero Moda | Basic T-shirt | 19.99 | https://img01.ztat.net/… | https://img01.ztat.net/… |
-
-   The page shows each list in `rank` order. Which list appears as A or B comes from the `order` column in
-   `participants` (set at random at part 1). The page never receives the source.
+   One-time: `study_participant.py key` stores a tool key in the Mac keychain and copies it; in the Sheet choose
+   **Study → Set tool key** and paste it. The key is never written to a file or to this repository.
 3. Select the participant's row in `participants` and choose **Study → Send part 2 link to the selected participant**.
    The e-mail text is shown for confirmation before it is sent (edit it at the top of `Code.gs`).
 4. After the features are checked: **Study → Delete photos of the selected participant**, then empty the Drive trash.
