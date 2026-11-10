@@ -75,7 +75,8 @@ the same.
 | Screen-outs | `screenouts` tab: reason and date only | kept for the participant flow diagram |
 
 The page shrinks photos to 2000 px and re-encodes them, which also drops their metadata (e.g. location). It loads no
-third-party fonts or trackers. Shirt images load from the shop's image server.
+third-party fonts or trackers. iPhone HEIC photos that the browser can't open (Chrome, Firefox, Android) are
+converted in the browser by `vendor/heic2any.min.js` (heic2any 0.0.4, MIT), served from this site and loaded only when needed. Shirt images load from the shop's image server.
 
 ## Variables
 
