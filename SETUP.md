@@ -86,7 +86,7 @@ Part 1: `consent`, `elig_*`, `width_cm`, `length_cm`, `size_label`, `worn_way`, 
 `device`.
 
 Part 2, per list L = A/B: `tick_L` (positions 1–10, "; "-separated), `chosen_L` (position), `chosen_L_product`,
-`colourhid_L`, `h1_L_1..3`, `h2_L` (single item, 1 = very unlikely … 7 = very likely), `h3_L_1..3`, `h4_L_1` (expected
-return), `h4_L_2` (would order a second size: bracketing) (all 1–7, raw; in analysis H1 items 2–3 and H3 item 1 are
+`colourhid_L`, `zooms_L` (how often a photo was enlarged), `h1_L_1..3`, `h2_L` (single item, 1 = very unlikely … 7 = very likely), `h3_L_1..3`, `h4_L_1` (return
+likelihood, 1 = very unlikely … 7 = very likely), `h4_L_2` (would order a second size: bracketing, agree scale) (all 1–7, raw; in analysis H1 items 2–3 and H3 item 1 are
 reverse-scored; the two H4 items are reported separately), `barrier_L` ("; "-separated; "none" when left blank), `barrier_other_L` (text, only when Other is ticked), `fam_brand_L`, `fam_seen_L`; then `pref_fit`, `pref_overall`, `why_list`,
 `other`, `tryon`, timings, `device`, plus `order`, `list_A_source`, `list_B_source` added by the script.
