@@ -47,6 +47,7 @@ h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 
 .q-text .opt { font-weight: 400; color: var(--muted); font-size: 14px; }
 .other-field { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
 .other-field input { flex: 1; min-width: 0; }
+.subq { display: grid; gap: 6px; } .subq + .subq { margin-top: 14px; } .subq p { margin: 0; }
 .hint { color: var(--muted); font-size: 14.5px; margin: 0; max-width: 66ch; }
 .q .err { display: none; color: var(--warn); font-size: 14px; margin: 0; }
 .q.missing .err { display: block; }
@@ -232,7 +233,7 @@ const OTHER = BARRIERS[BARRIERS.length - 1];
 const H1 = ["I expect this shirt to fit me the way my reference shirt does.","I am concerned that this shirt may not fit me well.","I am concerned that this shirt will fit me differently from how it fits on the model."];
 const H2 = [["Very unlikely","Very likely"]];
 const H3 = ["I was unsure which shirt to choose.","I feel confident about the shirt I chose.","I am convinced I chose the best shirt from this list."];
-const H4 = ["I would order it in a second size to be safe."];   // h4_L_2; the return question h4_L_1 is a likelihood scale
+const LIKELY = [["Very unlikely","Very likely"]];   // H4: h4_L_1 return, h4_L_2 second size (bracketing)
 
 /* ===== State ============================================================= */
 let A = {};                 // answers, keyed by variable name
@@ -352,8 +353,7 @@ const chosenScreen = L => ({ id: `chosen${L}`, part: "Part 2 · Your two lists",
   ${Q("Imagine you are shopping for this shirt. How likely would you be to buy it?", bipolar(`h2_${L}`, H2), { req: `h2_${L}` })}
   ${Q("Would anything make you hesitate to buy this shirt?", checks(`barrier_${L}`, BARRIERS) + ((A[`barrier_${L}`] || []).includes(OTHER) ? `<div class="other-field">${field(`barrier_other_${L}`, "text", 'maxlength="200" aria-label="Please specify"')}</div>` : ""), { hint: "Tick all that apply. Leave blank if none apply.", ...((A[`barrier_${L}`] || []).includes(OTHER) ? { req: `barrier_other_${L}`, err: "Please fill in what “Other” means for you." } : {}) })}
   ${Q("Thinking about how you chose this shirt:", likert(`h3_${L}`, H3), { req: likertKeys(`h3_${L}`, 3), err: "Please answer every row." })}
-  ${Q("Imagine you ordered this shirt. How likely is it that you would send it back?", bipolar(`h4_${L}_1`, [["Very unlikely","Very likely"]]), { req: `h4_${L}_1` })}
-  ${Q("If you ordered this shirt:", likert(`h4_${L}`, H4, 2), { req: `h4_${L}_2` })}
+  ${Q("Imagine you ordered this shirt.", `<div class="subq"><p>How likely is it that you would send it back?</p>${bipolar(`h4_${L}_1`, LIKELY)}</div><div class="subq"><p>How likely is it that you would also order it in a second size, to be safe?</p>${bipolar(`h4_${L}_2`, LIKELY)}</div>`, { req: `h4_${L}_1 h4_${L}_2`, err: "Please answer both." })}
   ${Q("About this shirt:", `<div style="display:grid;gap:12px"><div style="display:grid;gap:6px">I know this brand. ${radios(`fam_brand_${L}`, ["Yes","No"])}</div><div style="display:grid;gap:6px">I have seen this exact shirt before. ${radios(`fam_seen_${L}`, ["Yes","No","Not sure"])}</div></div>`, { req: `fam_brand_${L} fam_seen_${L}`, err: "Please answer both." })}` });
 const P2 = [
 { id: "welcome2", part: "Part 2 · Your two lists", title: "Welcome back", render: () => `
