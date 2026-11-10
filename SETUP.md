@@ -81,7 +81,7 @@ converted in the browser by `vendor/heic-to.js` (heic-to 1.6.6, a build of libhe
 ## Variables
 
 Part 1: `consent`, `elig_*`, `width_cm`, `length_cm`, `size_label`, `worn_way`, `shop_url`, `ref_fit` (1–7),
-`ref_fit_desc`, `ref_price`, `colpref`, `colfams`, `age`, `height_cm`, `size_usual`, `fit_pref`, `spend`,
+`ref_fit_desc`, `ref_price`, `age`, `height_cm`, `size_usual`, `fit_pref`, `spend`,
 `online_items`, `online_returns`, `rank_<aspect>` (1–3), `why_like`, `photos`, timings `t_<screen>_s`, `t_total_s`,
 `device`.
 

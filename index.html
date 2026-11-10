@@ -213,7 +213,6 @@ const ASPECTS = [
   ["hem", "Hem", "straight, curved, longer at the back, split …"],
   ["fabric", "Fabric", "drape, stretch, thickness, shine"]
 ];
-const COLOURS = [["Black","#1b1b1b"],["White","#fafafa"],["Grey","#9a9a9a"],["Navy","#1f2a4d"],["Beige / brown","#b08b65"],["Blue","#4d7fc4"],["Green","#5d8a5a"],["Red","#c8323c"],["Pink","#ea8fb4"],["Yellow / orange","#e3a33a"],["Purple","#7d5aa6"],["Pastels","linear-gradient(135deg,#f6d1dc,#d6e6f5,#e0f0d6)"]];
 const BARRIERS = ["Colour","Print or pattern","Fabric","Price","Brand","It is not my style","I already own a very similar shirt","I'm not sure it would fit","I'm not sure which size to take","Other (please specify)"];
 const OTHER = BARRIERS[BARRIERS.length - 1];
 const H1 = ["I expect this shirt to fit me the way my reference shirt does.","I am concerned that this shirt may not fit me well.","I am concerned that this shirt will fit me differently from how it fits on the model."];
@@ -299,9 +298,7 @@ const P1 = [
 { id: "aboutshirt", part: "Part 1 · Your shirt", title: "About your reference shirt", render: () => `
   ${Q("How well does this shirt fit you?", bipolar("ref_fit", [["Very poorly","Very well"]]), { first: true, req: "ref_fit" })}
   ${Q("How would you describe how it fits you?", radios("ref_fit_desc", ["Body-hugging","Fitted","Regular","Relaxed","Oversized"]), { req: "ref_fit_desc" })}
-  ${Q("Roughly how much did this shirt cost?", radios("ref_price", ["€30 or under","€30–50","€50–100","Over €100","Don't know / it was a gift"]), { req: "ref_price" })}
-  ${Q("If you were buying a new shirt that fits like this one, which colours would you like to see?", radios("colpref", ["Colours similar to my shirt","These colours:","No preference"], true) + `<div class="opts"${A.colpref === "These colours:" ? "" : " hidden"}>${COLOURS.map(([c, h]) => `<label><input type="checkbox" data-k="colfams" data-multi value="${esc(c)}"${(A.colfams || []).includes(c) ? " checked" : ""}><span class="swatch" style="background:${h}"></span>${c}</label>`).join("")}</div>`, { req: A.colpref === "These colours:" ? "colpref colfams" : "colpref", err: "Please choose an option (and at least one colour)." })}`,
-  rerenderOn: ["colpref"] },
+  ${Q("Roughly how much did this shirt cost?", radios("ref_price", ["€30 or under","€30–50","€50–100","Over €100","Don't know / it was a gift"]), { req: "ref_price" })}` },
 { id: "aboutyou", part: "Part 1 · Your shirt", title: "About you", render: () => `
   ${Q("Age", radios("age", ["18–24","25–34","35–44","45–54","55+"]), { first: true, req: "age" })}
   ${Q("Height", `<div class="inline"><label>${field("height_cm", "number", 'min="130" max="210" inputmode="numeric" style="width:110px" aria-label="Height in cm"')} <span class="unit">cm</span></label></div>`, { req: "height_cm" })}
@@ -427,7 +424,6 @@ function flatAnswers() {
   const skip = new Set(["email"]);
   if (PART === 1) {
     if (A.worn_way !== "A link to the shirt in an online shop") skip.add("shop_url");
-    if (A.colpref !== "These colours:") skip.add("colfams");
     if (A.consent) { skip.add("consent"); out.consent = (A.consent || []).length === 2 ? "both" : "incomplete"; }
   }
   for (const [k, v] of Object.entries(A)) { if (skip.has(k)) continue; out[k] = Array.isArray(v) ? v.slice().sort().join("; ") : v; }
