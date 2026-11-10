@@ -50,9 +50,14 @@ the same.
 
 ## 5. Each participant
 
-1. **Notification e-mail** "New part 1 submission: <pid>". Download the photos from the Drive folder (names start with
-   the pid) and run intake.
-2. **Lists:** paste 20 rows into the `lists` tab: 10 with `source = model`, 10 with `source = popularity`.
+1. **Notification e-mail** "New part 1 submission: <pid>". Download the two photos from the Drive folder (names
+   start with the pid) into the thesis project as `data/intake/<pid>/raw/flat.jpg` and `raw/worn.jpg`.
+2. **Lists** (thesis project, `tools/study_participant.py`, about 10–15 minutes per participant):
+   - `prepare <pid> --width … --length … --size …` (values from the `part1` row; `--rotate-flat 90` if the flat lay
+     is sideways): intake and the five frozen AI label rounds (subagents);
+   - `rerank <pid>`: re-ranker candidates, then the one re-ranker run (subagent, Opus);
+   - `export <pid>`: both lists → `lists_<pid>.tsv`. Paste its 20 rows (without the header) into the `lists` tab:
+     10 with `source = model`, 10 with `source = popularity`.
 
    | pid | source | rank | product_id | brand | name | price | img_packshot | img_model |
    |---|---|---|---|---|---|---|---|---|
