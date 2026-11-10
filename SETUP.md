@@ -76,7 +76,7 @@ the same.
 
 The page shrinks photos to 2000 px and re-encodes them, which also drops their metadata (e.g. location). It loads no
 third-party fonts or trackers. iPhone HEIC photos that the browser can't open (Chrome, Firefox, Android) are
-converted in the browser by `vendor/heic2any.min.js` (heic2any 0.0.4, MIT), served from this site and loaded only when needed. Shirt images load from the shop's image server.
+converted in the browser by `vendor/heic-to.js` (heic-to 1.6.6, a build of libheif, LGPL-3.0), served from this site and loaded only when needed. Shirt images load from the shop's image server.
 
 ## Variables
 

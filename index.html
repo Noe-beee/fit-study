@@ -510,8 +510,8 @@ function loadImg(blob) {
   const url = URL.createObjectURL(blob);
   return new Promise((res, rej) => { const i = new Image(); i.onload = () => { URL.revokeObjectURL(url); res(i); }; i.onerror = e => { URL.revokeObjectURL(url); rej(e); }; i.src = url; });
 }
-let heicP;   // HEIC converter (heic2any 0.0.4, MIT), served from this site; loaded only when a photo needs it
-const heicLib = () => heicP || (heicP = new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "vendor/heic2any.min.js"; sc.onload = () => res(window.heic2any); sc.onerror = () => { heicP = null; rej(new Error("heic2any")); }; document.head.appendChild(sc); }));
+let heicP;   // HEIC converter (heic-to 1.6.6 = libheif, LGPL-3.0), served from this site; loaded only when a photo needs it
+const heicLib = () => heicP || (heicP = new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "vendor/heic-to.js"; sc.onload = () => res(window.HeicTo); sc.onerror = () => { heicP = null; rej(new Error("heic-to not loaded")); }; document.head.appendChild(sc); }));
 
 async function takePhoto(input) {
   const file = input.files && input.files[0]; if (!file) return;
@@ -523,8 +523,7 @@ async function takePhoto(input) {
     catch (e) {
       // Chrome, Firefox and Android can't open iPhone HEIC photos; convert them in the browser (Safari opens them directly).
       setStatus("Converting your photo, this can take a few seconds …");
-      const out = await (await heicLib())({ blob: file, toType: "image/jpeg", quality: 0.92 });
-      img = await loadImg(Array.isArray(out) ? out[0] : out);
+      img = await loadImg(await (await heicLib())({ blob: file, type: "image/jpeg", quality: 0.92 }));
     }
     const s = Math.min(1, CONFIG.MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
     const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
@@ -533,6 +532,7 @@ async function takePhoto(input) {
     F[k] = { b64: data.split(",")[1], preview: data };
     setStatus(""); const y = window.scrollY; render(); window.scrollTo(0, y);
   } catch (err) {
+    console.error("photo", file.type, file.size, err);
     setStatus("This photo couldn't be read. Please try another photo, or take a screenshot of it and upload the screenshot.", true);
   }
 }
