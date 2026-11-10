@@ -456,7 +456,7 @@ async function post(payload) {
   return res.json();
 }
 async function submit() {
-  busy = true; render(); setStatus(PART === 1 ? "Sending your answers and photos …" : "Sending your answers …");
+  busy = true; render(); setStatus(PART === 1 ? "Sending your answers and photos. This can take up to 30 seconds. Please stay on this page and don't close or reload it." : "Sending your answers … Please stay on this page.");
   try {
     const payload = PART === 1
       ? { action: "part1", email: A.email.trim(), answers: flatAnswers(), photos: photosToSend() }
@@ -512,6 +512,9 @@ function loadImg(blob) {
 }
 let heicP;   // HEIC converter (heic-to 1.6.6 = libheif, LGPL-3.0), served from this site; loaded only when a photo needs it
 const heicLib = () => heicP || (heicP = new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "vendor/heic-to.js"; sc.onload = () => res(window.HeicTo); sc.onerror = () => { heicP = null; rej(new Error("heic-to not loaded")); }; document.head.appendChild(sc); }));
+
+// While answers are being sent, warn before the page is closed or reloaded.
+window.addEventListener("beforeunload", e => { if (busy) { e.preventDefault(); e.returnValue = ""; } });
 
 async function takePhoto(input) {
   const file = input.files && input.files[0]; if (!file) return;
