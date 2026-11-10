@@ -47,7 +47,6 @@ h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 
 .q-text .opt { font-weight: 400; color: var(--muted); font-size: 14px; }
 .other-field { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
 .other-field input { flex: 1; min-width: 0; }
-.subq { display: grid; gap: 6px; } .subq + .subq { margin-top: 14px; } .subq p { margin: 0; }
 .hint { color: var(--muted); font-size: 14.5px; margin: 0; max-width: 66ch; }
 .q .err { display: none; color: var(--warn); font-size: 14px; margin: 0; }
 .q.missing .err { display: block; }
@@ -218,6 +217,7 @@ const PART = PID || params.get("part") === "2" ? 2 : 1;
 const STORE_KEY = PART === 1 ? "fitstudy-p1" : `fitstudy-p2-${PID || "demo"}`;
 
 /* ===== Content =========================================================== */
+const LIKELY7 = ["Very unlikely","Unlikely","Somewhat unlikely","Neither likely nor unlikely","Somewhat likely","Likely","Very likely"];
 const AGREE7 = ["Strongly disagree","Disagree","Somewhat disagree","Neither agree nor disagree","Somewhat agree","Agree","Strongly agree"];
 const ASPECTS = [
   ["width", "Width: how close it sits", "body-hugging, fitted, regular, relaxed or oversized"],
@@ -233,7 +233,7 @@ const OTHER = BARRIERS[BARRIERS.length - 1];
 const H1 = ["I expect this shirt to fit me the way my reference shirt does.","I am concerned that this shirt may not fit me well.","I am concerned that this shirt will fit me differently from how it fits on the model."];
 const H2 = [["Very unlikely","Very likely"]];
 const H3 = ["I was unsure which shirt to choose.","I feel confident about the shirt I chose.","I am convinced I chose the best shirt from this list."];
-const LIKELY = [["Very unlikely","Very likely"]];   // H4: h4_L_1 return, h4_L_2 second size (bracketing)
+const H4 = ["How likely is it that you would send it back?", "How likely is it that you would also order it in a second size, to be safe?"];   // h4_L_1 return, h4_L_2 bracketing (likelihood scale)
 
 /* ===== State ============================================================= */
 let A = {};                 // answers, keyed by variable name
@@ -252,7 +252,7 @@ let uid = 0; const nid = p => `${p}${++uid}`;
 const Q = (text, body, o = {}) => `<div class="q${o.first ? " first" : ""}"${o.req ? ` data-req="${o.req}"` : ""}><div class="q-text">${text}${o.optional ? ' <span class="opt">(optional)</span>' : ""}</div>${o.hint ? `<p class="hint">${o.hint}</p>` : ""}${body}<p class="err">${o.err || "Please answer this question."}</p></div>`;
 const radios = (k, list, stack) => `<div class="opts${stack ? " stack" : ""}" role="radiogroup">${list.map(o => `<label><input type="radio" name="${k}" data-k="${k}" value="${esc(o)}"${A[k] === o ? " checked" : ""}> ${o}</label>`).join("")}</div>`;
 const checks = (k, list, stack) => `<div class="opts${stack ? " stack" : ""}" role="group">${list.map(o => `<label><input type="checkbox" data-k="${k}" data-multi value="${esc(o)}"${(A[k] || []).includes(o) ? " checked" : ""}> ${o}</label>`).join("")}</div>`;
-const likert = (p, items, start = 1) => `<div class="scale-wrap"><table class="likert"><tr class="head"><th></th>${AGREE7.map(a => `<th>${a}</th>`).join("")}</tr>${items.map((t, i) => { const k = `${p}_${i + start}`; return `<tr><td>${t}</td><td class="cells">${AGREE7.map((a, j) => `<label><input type="radio" name="${k}" data-k="${k}" value="${j + 1}"${A[k] === String(j + 1) ? " checked" : ""} aria-label="${a}"><span>${j + 1}</span></label>`).join("")}<div class="ends"><span>Strongly disagree</span><span>Strongly agree</span></div></td></tr>`; }).join("")}</table></div>`;
+const likert = (p, items, start = 1, labels = AGREE7) => `<div class="scale-wrap"><table class="likert"><tr class="head"><th></th>${labels.map(a => `<th>${a}</th>`).join("")}</tr>${items.map((t, i) => { const k = `${p}_${i + start}`; return `<tr><td>${t}</td><td class="cells">${labels.map((a, j) => `<label><input type="radio" name="${k}" data-k="${k}" value="${j + 1}"${A[k] === String(j + 1) ? " checked" : ""} aria-label="${a}"><span>${j + 1}</span></label>`).join("")}<div class="ends"><span>${labels[0]}</span><span>${labels[6]}</span></div></td></tr>`; }).join("")}</table></div>`;
 const likertKeys = (p, n) => Array.from({ length: n }, (_, i) => `${p}_${i + 1}`).join(" ");
 const bipolar = (p, pairs) => `<div class="bip"><div class="bip-nums" aria-hidden="true"><span></span>${[1,2,3,4,5,6,7].map(j => `<span>${j}</span>`).join("")}<span></span></div>${pairs.map(([l, r], i) => { const k = pairs.length > 1 ? `${p}_${i + 1}` : p; return `<div class="bip-row" role="radiogroup" aria-label="${esc(l)} to ${esc(r)}"><span class="l">${l}</span>${[1,2,3,4,5,6,7].map(j => `<label><input type="radio" name="${k}" data-k="${k}" value="${j}"${A[k] === String(j) ? " checked" : ""} aria-label="${j} of 7"><span>${j}</span></label>`).join("")}<span class="r">${r}</span></div>`; }).join("")}</div>`;
 const field = (k, type, attrs = "") => `<input type="${type}" data-k="${k}" value="${esc(A[k] || "")}" ${attrs}>`;
@@ -353,7 +353,7 @@ const chosenScreen = L => ({ id: `chosen${L}`, part: "Part 2 · Your two lists",
   ${Q("Imagine you are shopping for this shirt. How likely would you be to buy it?", bipolar(`h2_${L}`, H2), { req: `h2_${L}` })}
   ${Q("Would anything make you hesitate to buy this shirt?", checks(`barrier_${L}`, BARRIERS) + ((A[`barrier_${L}`] || []).includes(OTHER) ? `<div class="other-field">${field(`barrier_other_${L}`, "text", 'maxlength="200" aria-label="Please specify"')}</div>` : ""), { hint: "Tick all that apply. Leave blank if none apply.", ...((A[`barrier_${L}`] || []).includes(OTHER) ? { req: `barrier_other_${L}`, err: "Please fill in what “Other” means for you." } : {}) })}
   ${Q("Thinking about how you chose this shirt:", likert(`h3_${L}`, H3), { req: likertKeys(`h3_${L}`, 3), err: "Please answer every row." })}
-  ${Q("Imagine you ordered this shirt.", `<div class="subq"><p>How likely is it that you would send it back?</p>${bipolar(`h4_${L}_1`, LIKELY)}</div><div class="subq"><p>How likely is it that you would also order it in a second size, to be safe?</p>${bipolar(`h4_${L}_2`, LIKELY)}</div>`, { req: `h4_${L}_1 h4_${L}_2`, err: "Please answer both." })}
+  ${Q("Imagine you ordered this shirt:", likert(`h4_${L}`, H4, 1, LIKELY7), { req: likertKeys(`h4_${L}`, 2), err: "Please answer every row." })}
   ${Q("About this shirt:", `<div style="display:grid;gap:12px"><div style="display:grid;gap:6px">I know this brand. ${radios(`fam_brand_${L}`, ["Yes","No"])}</div><div style="display:grid;gap:6px">I have seen this exact shirt before. ${radios(`fam_seen_${L}`, ["Yes","No","Not sure"])}</div></div>`, { req: `fam_brand_${L} fam_seen_${L}`, err: "Please answer both." })}` });
 const P2 = [
 { id: "welcome2", part: "Part 2 · Your two lists", title: "Welcome back", render: () => `
