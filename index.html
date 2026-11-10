@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Fit Study · HWR Berlin</title>
+<style>
+/* One survey screen at a time; thin progress rule on top, Back/Next at the bottom.
+   System fonts only: no third-party font requests (no participant IP goes to a font host). */
+:root {
+  --bg: #f2f3f0; --paper: #ffffff; --ink: #18212b; --muted: #5b6672; --rule: #d9ddd8;
+  --accent: #1f5a7a; --accent-soft: #e3eef4; --warn: #9a3c00; --tile: #eef0ec;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #12171c; --paper: #1a2027; --ink: #e6eaee; --muted: #9aa5b0; --rule: #2e3742;
+    --accent: #7fb6d6; --accent-soft: #1d2f3b; --warn: #f0a46a; --tile: #222a32; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.55; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+.wrap { max-width: 860px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 22px 56px; display: grid; gap: 16px; }
+.topbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; font-size: 13px; color: var(--muted); }
+.topbar .study { font-family: var(--font-mono); letter-spacing: .06em; text-transform: uppercase; font-size: 12px; }
+.flag { font-family: var(--font-mono); font-size: 11.5px; border: 1px dashed var(--rule); border-radius: 3px; padding: 1px 7px; }
+.progress { height: 4px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.progress div { height: 100%; background: var(--accent); width: 0; transition: width .25s ease; }
+@media (prefers-reduced-motion: reduce) { .progress div { transition: none; } }
+
+.screen { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 26px 28px 30px; display: grid; gap: 24px; min-width: 0; outline: none; }
+@media (max-width: 560px) { .screen { padding: 20px 16px 24px; } }
+.part { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 4vw, 34px); line-height: 1.15; margin: 4px 0 0; text-wrap: balance; }
+.intro { display: grid; gap: 10px; max-width: 66ch; }
+.intro p { margin: 0; }
+.intro ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; }
+
+.q { display: grid; gap: 10px; padding-top: 20px; border-top: 1px solid var(--rule); min-width: 0; }
+.q.first { border-top: 0; padding-top: 0; }
+.q-text { font-weight: 500; max-width: 66ch; }
+.q-text .opt { font-weight: 400; color: var(--muted); font-size: 14px; }
+.other-field { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.other-field input { flex: 1; min-width: 0; }
+.hint { color: var(--muted); font-size: 14.5px; margin: 0; max-width: 66ch; }
+.q .err { display: none; color: var(--warn); font-size: 14px; margin: 0; }
+.q.missing .err { display: block; }
+.q.missing { box-shadow: -10px 0 0 -7px var(--warn); }
+
+.opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.opts.stack { flex-direction: column; align-items: stretch; max-width: 560px; }
+.opts label { display: flex; gap: 9px; align-items: center; border: 1px solid var(--rule); border-radius: 5px; padding: 8px 12px; cursor: pointer; font-size: 15px; background: var(--paper); }
+.opts label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.opts input { accent-color: var(--accent); width: 17px; height: 17px; margin: 0; flex: none; }
+.swatch { width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--rule); flex: none; }
+
+.scale-wrap { overflow-x: auto; }
+table.likert { border-collapse: collapse; width: 100%; min-width: 600px; font-size: 15px; }
+table.likert th { font-weight: 400; font-size: 12px; color: var(--muted); text-align: center; padding: 4px 2px 8px; vertical-align: bottom; line-height: 1.25; width: 66px; }
+table.likert th:first-child { width: auto; }
+table.likert td { border-top: 1px solid var(--rule); padding: 10px 4px; text-align: center; }
+table.likert td:first-child { text-align: left; padding-right: 14px; }
+table.likert input, .bip input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; margin: 0; }
+/* Bipolar scales: label | 1–7 | label on wide screens; on phones both labels sit above a row of 7 numbered buttons. */
+.bip { display: grid; font-size: 15px; max-width: 760px; }
+.bip-nums, .bip-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(7, 40px) minmax(0, 1fr); gap: 4px; align-items: center; }
+.bip-nums { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: center; padding-bottom: 4px; }
+.bip-row { border-top: 1px solid var(--rule); padding: 10px 0; }
+.bip-row .l { text-align: right; padding-right: 8px; }
+.bip-row .r { text-align: left; padding-left: 8px; }
+.bip-row label { display: grid; justify-items: center; cursor: pointer; }
+.bip-row label span { display: none; }
+@media (max-width: 640px) {
+  .bip-nums { display: none; }
+  .bip-row { grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 8px; }
+  .bip-row .l { grid-column: 1 / 5; grid-row: 1; text-align: left; padding: 0; font-size: 14px; }
+  .bip-row .r { grid-column: 5 / 8; grid-row: 1; text-align: right; padding: 0; font-size: 14px; }
+  .bip-row label { grid-row: 2; gap: 2px; }
+  .bip-row label span { display: block; font-size: 10.5px; color: var(--muted); }
+}
+/* Phones: likert rows stack (statement, then a row of 7 numbered buttons) so nothing scrolls sideways. */
+@media (max-width: 640px) {
+  table.likert, table.likert tbody, table.likert tr, table.likert td { display: block; min-width: 0; width: 100%; }
+  table.likert tr.head { display: none; }
+  table.likert tr { border-top: 1px solid var(--rule); padding: 10px 0; }
+  table.likert td { border: 0; padding: 0; text-align: left; }
+  table.likert td.cells { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 8px; }
+  table.likert td.cells label { display: grid; justify-items: center; gap: 2px; font-size: 10.5px; color: var(--muted); line-height: 1.15; text-align: center; }
+  table.likert .ends { display: flex !important; grid-column: 1 / -1; justify-content: space-between; font-size: 12px; color: var(--muted); }
+}
+table.likert .ends { display: none; }
+table.likert td.cells { padding: 0; }
+@media (min-width: 641px) {
+  table.likert td.cells { display: contents; }
+  table.likert td.cells label { display: table-cell; border-top: 1px solid var(--rule); padding: 10px 4px; text-align: center; }
+  table.likert td.cells label span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+}
+
+input[type=text], input[type=email], input[type=number], input[type=url], textarea, select { font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 5px; padding: 8px 11px; min-width: 0; }
+input[type=url], input[type=text], input[type=email] { width: min(100%, 460px); }
+textarea { width: 100%; max-width: 66ch; min-height: 92px; resize: vertical; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, .opts label:focus-within, .drop:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.unit { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.inline { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: center; }
+.inline label { display: inline-flex; gap: 8px; align-items: center; }
+
+.drop { position: relative; border: 1.5px dashed var(--rule); border-radius: 8px; padding: 14px 16px; display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 14px; align-items: center; max-width: 600px; cursor: pointer; }
+.drop.has { border-style: solid; border-color: var(--accent); }
+.drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.drop .pic { width: 76px; height: 76px; border-radius: 6px; display: grid; place-items: center; overflow: hidden; background: var(--tile); }
+.drop .pic img { width: 100%; height: 100%; object-fit: cover; }
+.drop .pic svg { width: 64px; height: 64px; color: var(--muted); }
+.drop .t { font-weight: 500; }
+.drop .h { color: var(--muted); font-size: 14px; }
+.drop .btn-like { color: var(--accent); font-size: 14px; font-weight: 500; }
+
+.measure { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 20px; align-items: center; max-width: 640px; }
+.measure svg { width: 100%; height: auto; color: var(--ink); }
+.measure .lbl { font-family: var(--font-mono); font-size: 9px; fill: var(--accent); }
+@media (max-width: 560px) { .measure { grid-template-columns: minmax(0, 1fr); } .measure svg { max-width: 220px; } }
+.branch { display: grid; gap: 10px; max-width: 620px; }
+
+.rank { display: grid; gap: 6px; max-width: 600px; }
+.rank-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; border: 1px solid var(--rule); border-radius: 5px; padding: 8px 12px; }
+.rank-row small { display: block; color: var(--muted); font-size: 13px; }
+.rank-row select { padding: 5px 8px; font-size: 14px; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--rule); border-radius: 6px; padding: 8px; display: grid; gap: 6px; background: var(--paper); align-content: start; font-size: 13.5px; min-width: 0; }
+.ph { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.ph > * { aspect-ratio: 2 / 3; width: 100%; max-width: 100%; border-radius: 4px; background: var(--tile); object-fit: cover; display: block; }
+.card .b { font-weight: 600; }
+.card .n { color: var(--muted); font-size: 12.5px; line-height: 1.3; }
+.card .p { font-family: var(--font-mono); font-size: 13px; }
+.card .tick { display: flex; gap: 7px; align-items: center; font-size: 13px; border-top: 1px solid var(--rule); padding-top: 6px; cursor: pointer; }
+.card .tick input { width: 16px; height: 16px; accent-color: var(--accent); }
+.card .choose { font: inherit; font-size: 13px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); border-radius: 5px; padding: 6px; cursor: pointer; }
+.card.chosen { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.card.chosen .choose { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+
+.picked { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; align-items: center; border: 1px solid var(--rule); border-radius: 8px; padding: 12px; background: var(--bg); max-width: 540px; }
+.picked .meta { display: grid; gap: 2px; font-size: 14px; }
+.picked .meta b { font-size: 15px; }
+@media (max-width: 480px) { .picked { grid-template-columns: minmax(0, 1fr); } .picked .ph { max-width: 200px; } }
+
+.mini-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.mini { border: 1px solid var(--rule); border-radius: 6px; padding: 10px; display: grid; gap: 8px; min-width: 0; }
+.mini .t { font-weight: 600; }
+.mini .grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.mini .grid > * { aspect-ratio: 2 / 3; width: 100%; border-radius: 3px; background: var(--tile); object-fit: cover; display: block; }
+
+.nav { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
+.nav button { font: inherit; font-weight: 500; border-radius: 6px; padding: 10px 20px; cursor: pointer; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); }
+.nav button.primary { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+.nav button[disabled] { opacity: .4; cursor: default; }
+.status { font-size: 14px; color: var(--muted); order: -1; flex-basis: 100%; }
+.status:empty { display: none; }
+.status.bad { color: var(--warn); }
+.done-mark { width: 54px; height: 54px; color: var(--accent); }
+.disclaimer { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 12px; max-width: 78ch; }
+.disclaimer b { font-weight: 600; }
+.tryon { border: 1.5px solid var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 18px 20px; display: grid; gap: 12px; max-width: 66ch; }
+.tryon h2 { font-family: var(--font-display); font-weight: 600; font-size: 21px; line-height: 1.25; margin: 0; }
+.tryon p { margin: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <span class="study">Fit study · HWR Berlin</span>
+    <span class="flag" id="flag" hidden></span>
+  </div>
+  <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+  <main class="screen" id="screen" tabindex="-1" aria-live="polite"></main>
+  <div class="nav" id="nav">
+    <button type="button" id="back">Back</button>
+    <span class="status" id="status" role="status"></span>
+    <button type="button" id="next" class="primary">Next</button>
+  </div>
+</div>
+
+<script>
+/* ===== Configuration ======================================================
+   API: the Google Apps Script web app URL (ends in /exec), from SETUP.md step 3.
+   Empty API, or ?demo in the address, runs the page without sending anything. */
+const CONFIG = {
+  API: "https://script.google.com/macros/s/AKfycbwl3vfrLm7WLnLTBwhYtPlP0YZeFh6e7beeo9fj8U_siU8-V3DaUlzahhVWe5sPrHGhFQ/exec",
+  CONTACT: "Noelani Bradley · bradley.noelani@gmail.com",
+  MAX_SIDE: 2000,        // photos are shrunk to this many pixels on the long side before upload
+  JPEG_QUALITY: 0.86
+};
+
+/* ===== Mode ============================================================== */
+const params = new URLSearchParams(location.search);
+const PID = (params.get("pid") || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+const DEMO = params.has("demo") || !CONFIG.API;
+const PART = PID || params.get("part") === "2" ? 2 : 1;
+const STORE_KEY = PART === 1 ? "fitstudy-p1" : `fitstudy-p2-${PID || "demo"}`;
+
+/* ===== Content =========================================================== */
+const AGREE7 = ["Strongly disagree","Disagree","Somewhat disagree","Neither agree nor disagree","Somewhat agree","Agree","Strongly agree"];
+const ASPECTS = [
+  ["width", "Width: how close it sits", "body-hugging, fitted, regular, relaxed or oversized"],
+  ["shape", "Overall shape", "straight, A-line, boxy, tapered"],
+  ["length", "Length", "where the hem ends: cropped, waist, hip, longer"],
+  ["sleeves", "Sleeves and shoulders", "how wide the sleeve is, where the shoulder seam sits"],
+  ["neckline", "Neckline", "type and depth: crew, scoop, V, boat …"],
+  ["hem", "Hem", "straight, curved, longer at the back, split …"],
+  ["fabric", "Fabric", "drape, stretch, thickness, shine"]
+];
+const COLOURS = [["Black","#1b1b1b"],["White","#fafafa"],["Grey","#9a9a9a"],["Navy","#1f2a4d"],["Beige / brown","#b08b65"],["Blue","#4d7fc4"],["Green","#5d8a5a"],["Red","#c8323c"],["Pink","#ea8fb4"],["Yellow / orange","#e3a33a"],["Purple","#7d5aa6"],["Pastels","linear-gradient(135deg,#f6d1dc,#d6e6f5,#e0f0d6)"]];
+const BARRIERS = ["Colour","Print or pattern","Fabric","Price","Brand","It is not my style","I already own a very similar shirt","I'm not sure it would fit","I'm not sure which size to take","Other (please specify)"];
+const OTHER = BARRIERS[BARRIERS.length - 1];
+const H1 = ["I expect this shirt to fit me the way my reference shirt does.","I am concerned that this shirt may not fit me well.","I am concerned that this shirt will fit me differently from how it fits on the model."];
+const H2 = [["Very unlikely","Very likely"]];
+const H3 = ["I was unsure which shirt to choose.","I feel confident about the shirt I chose.","I am convinced I chose the best shirt from this list."];
+const H4 = ["I would probably send it back.","I would order it in a second size to be safe."];
+
+/* ===== State ============================================================= */
+let A = {};                 // answers, keyed by variable name
+const F = {};               // photos: key -> { b64, preview }
+let LISTS = null;           // part 2: { A: [...10], B: [...10] }
+const T = { start: Date.now(), screen: Date.now(), per: {} };
+try { const s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s && typeof s === "object") A = s; } catch (e) {}
+const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(A)); } catch (e) {} };
+const forget = () => { try { localStorage.removeItem(STORE_KEY); } catch (e) {} };
+
+/* ===== Small helpers ===================================================== */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const has = k => { const v = F[k] ? 1 : A[k]; return Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && String(v).trim() !== ""; };
+let uid = 0; const nid = p => `${p}${++uid}`;
+
+const Q = (text, body, o = {}) => `<div class="q${o.first ? " first" : ""}"${o.req ? ` data-req="${o.req}"` : ""}><div class="q-text">${text}${o.optional ? ' <span class="opt">(optional)</span>' : ""}</div>${o.hint ? `<p class="hint">${o.hint}</p>` : ""}${body}<p class="err">${o.err || "Please answer this question."}</p></div>`;
+const radios = (k, list, stack) => `<div class="opts${stack ? " stack" : ""}" role="radiogroup">${list.map(o => `<label><input type="radio" name="${k}" data-k="${k}" value="${esc(o)}"${A[k] === o ? " checked" : ""}> ${o}</label>`).join("")}</div>`;
+const checks = (k, list, stack) => `<div class="opts${stack ? " stack" : ""}" role="group">${list.map(o => `<label><input type="checkbox" data-k="${k}" data-multi value="${esc(o)}"${(A[k] || []).includes(o) ? " checked" : ""}> ${o}</label>`).join("")}</div>`;
+const likert = (p, items) => `<div class="scale-wrap"><table class="likert"><tr class="head"><th></th>${AGREE7.map(a => `<th>${a}</th>`).join("")}</tr>${items.map((t, i) => { const k = `${p}_${i + 1}`; return `<tr><td>${t}</td><td class="cells">${AGREE7.map((a, j) => `<label><input type="radio" name="${k}" data-k="${k}" value="${j + 1}"${A[k] === String(j + 1) ? " checked" : ""} aria-label="${a}"><span>${j + 1}</span></label>`).join("")}<div class="ends"><span>Strongly disagree</span><span>Strongly agree</span></div></td></tr>`; }).join("")}</table></div>`;
+const likertKeys = (p, n) => Array.from({ length: n }, (_, i) => `${p}_${i + 1}`).join(" ");
+const bipolar = (p, pairs) => `<div class="bip"><div class="bip-nums" aria-hidden="true"><span></span>${[1,2,3,4,5,6,7].map(j => `<span>${j}</span>`).join("")}<span></span></div>${pairs.map(([l, r], i) => { const k = pairs.length > 1 ? `${p}_${i + 1}` : p; return `<div class="bip-row" role="radiogroup" aria-label="${esc(l)} to ${esc(r)}"><span class="l">${l}</span>${[1,2,3,4,5,6,7].map(j => `<label><input type="radio" name="${k}" data-k="${k}" value="${j}"${A[k] === String(j) ? " checked" : ""} aria-label="${j} of 7"><span>${j}</span></label>`).join("")}<span class="r">${r}</span></div>`; }).join("")}</div>`;
+const field = (k, type, attrs = "") => `<input type="${type}" data-k="${k}" value="${esc(A[k] || "")}" ${attrs}>`;
+const area = (k, label) => `<textarea data-k="${k}" aria-label="${label}" maxlength="3000">${esc(A[k] || "")}</textarea>`;
+const ICON = {
+  flat: '<svg viewBox="0 0 60 56" aria-hidden="true"><path d="M20 4 L8 10 L2 22 L11 26 L14 20 L14 52 L46 52 L46 20 L49 26 L58 22 L52 10 L40 4 Q30 12 20 4 Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  worn: '<svg viewBox="0 0 60 80" aria-hidden="true"><rect x="22" y="2" width="16" height="12" rx="3" fill="currentColor" opacity=".25"/><path d="M21 17 L10 22 L6 34 L13 36 L16 30 L16 62 L44 62 L44 30 L47 36 L54 34 L50 22 L39 17 Q30 23 21 17 Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+  label: '<svg viewBox="0 0 60 60" aria-hidden="true"><rect x="14" y="8" width="32" height="44" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 20 H40 M20 27 H36 M20 34 H40 M20 41 H30" stroke="currentColor" stroke-width="1.6"/></svg>'
+};
+const upload = (k, title, hint, kind) => { const n = nid("up"); return `<label class="drop${F[k] ? " has" : ""}" for="${n}"><input type="file" accept="image/*" id="${n}" data-photo="${k}"><span class="pic">${F[k] ? `<img alt="Your photo" src="${F[k].preview}">` : ICON[kind]}</span><span><span class="t">${title}</span><br><span class="h">${hint}</span><br><span class="btn-like">${F[k] ? "Choose a different photo" : "Choose a photo"}</span></span></label>`; };
+const measureSVG = `<svg viewBox="0 0 220 190" role="img" aria-label="A shirt lying flat. Width is measured straight across from armpit to armpit. Length is measured from the highest point of the shoulder down to the hem.">
+  <path d="M78 14 L40 30 L12 70 L38 82 L52 62 L52 176 L168 176 L168 62 L182 82 L208 70 L180 30 L142 14 Q110 40 78 14 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" opacity=".7"/>
+  <line x1="53" y1="66" x2="167" y2="66" stroke="var(--accent)" stroke-width="2"/><path d="M53 61 V71 M167 61 V71" stroke="var(--accent)" stroke-width="2"/>
+  <text x="110" y="60" text-anchor="middle" class="lbl">WIDTH</text>
+  <line x1="80" y1="16" x2="80" y2="175" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3"/><path d="M75 16 H85 M75 175 H85" stroke="var(--accent)" stroke-width="2"/>
+  <text x="86" y="128" class="lbl">LENGTH</text></svg>`;
+const doneMark = `<svg class="done-mark" viewBox="0 0 54 54" aria-hidden="true"><circle cx="27" cy="27" r="25" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 28 L24 36 L39 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+/* ===== Part 1 screens ==================================================== */
+const ELIG_OUT = {
+  own: "people who own a short-sleeve shirt whose fit they like",
+  country: "people who live in Europe or the US",
+  womens: "people who usually buy their shirts in the women's section"
+};
+const P1 = [
+{ id: "welcome", part: "Part 1 · Your shirt", title: "Welcome", render: () => `
+  <div class="intro">
+    <p>Thank you for your interest. This study is part of my master's thesis at HWR Berlin and looks at whether a shirt you already own and like can help you find new shirts online.</p>
+    <p><b>How it works:</b> First, you describe one shirt you own whose fit you like (about 10 minutes). Within two days you will receive a personal link. There you will see two lists of shirts from an online shop, choose one shirt from each, and answer some questions (about 15 minutes).</p>
+  </div>
+  <p class="disclaimer"><b>Your data:</b> Your name is not stored with your answers. Your e-mail address is used only to send you the link to part 2 and is kept separately from your answers. Your photos are used only to describe your shirt: features are extracted, such as its length and how wide the body and sleeves are. Once the features have been extracted, the photos are deleted. Taking part is voluntary, and you can stop or withdraw at any time without giving a reason.</p>
+  ${Q("Consent", checks("consent", ["I have read the information above and agree to take part.", "I agree that the photos I upload (my shirt, and me wearing it if I choose that option) are used to extract the shirt's features and are then deleted."], true), { req: "consent", err: "Please tick both boxes to take part." })}
+  <p class="disclaimer" style="border-top:0;padding-top:0"><b>Contact:</b> ${esc(CONFIG.CONTACT)}</p>`,
+  check: () => (A.consent || []).length === 2 },
+{ id: "elig", part: "Part 1 · Your shirt", title: "A few questions first", render: () => `
+  ${Q("Do you own a short-sleeve shirt that fits you the way you like?", radios("elig_own", ["Yes","No"]), { first: true, req: "elig_own" })}
+  ${Q("Where do you live?", radios("elig_country", ["Germany","Other EU country","United Kingdom","USA","Other"]), { req: "elig_country" })}
+  ${Q("Do you usually buy your shirts in the women's section?", radios("elig_womens", ["Yes","No"]), { req: "elig_womens" })}
+  ${Q("Have you bought clothes online in the last 12 months?", radios("elig_online", ["Yes","No"]), { req: "elig_online" })}`,
+  after: () => A.elig_own === "No" ? "own" : A.elig_country === "Other" ? "country" : A.elig_womens === "No" ? "womens" : null },
+{ id: "shirt", part: "Part 1 · Your shirt", title: "Your reference shirt", render: () => `
+  <div class="intro"><p>Think of one short-sleeve shirt you own whose fit you like. This is your <b>reference shirt</b>. It can have any neckline (crew, V, scoop, boat …), but please don't choose a button-up shirt or blouse.</p></div>
+  ${Q("1. Take a photo of the shirt lying flat", upload("photo_flat", "Lying flat, front side up", "Smooth it out, sleeves to the sides, the whole shirt in the picture, nothing else on the surface.", "flat"), { first: true, req: "photo_flat", err: "Please add a photo of the shirt lying flat.", hint: "Lay the shirt on a plain, flat surface (such as on the bed or floor) and hold the phone straight above it." })}
+  ${Q("2. Measure the shirt while it lies flat", `<div class="measure">${measureSVG}<div style="display:grid;gap:12px"><p class="hint">Use a tape measure, in cm.<br><b>Width:</b> straight across, from armpit to armpit.<br><b>Length:</b> from the highest point of the shoulder, next to the collar, straight down to the hem.</p><div class="inline"><label>Width ${field("width_cm", "number", 'step="0.5" min="20" max="120" inputmode="decimal" style="width:90px"')} <span class="unit">cm</span></label><label>Length ${field("length_cm", "number", 'step="0.5" min="30" max="120" inputmode="decimal" style="width:90px"')} <span class="unit">cm</span></label></div></div></div>`, { req: "width_cm length_cm", err: "Please enter both measurements in cm." })}
+  ${Q("3. Which size is your shirt?", field("size_label", "text", 'placeholder="e.g. M, 38, 10" aria-label="Size" maxlength="40"'), { req: "size_label", hint: "As written on the label, for example M, 38 or 10. If the label is gone, your best guess." })}
+  ${Q("4. Take a photo of the fabric label", upload("photo_label", "The care label", "Close-up, in focus.", "label"), { optional: true, hint: "If the care label is still there: the fabric composition (for example 95% cotton, 5% elastane)." })}`,
+  check: () => { const w = +A.width_cm, l = +A.length_cm; return w >= 20 && w <= 120 && l >= 30 && l <= 120 || "measure"; } },
+{ id: "worn", part: "Part 1 · Your shirt", title: "Your shirt, worn", render: () => {
+  const way = A.worn_way, ways = ["A photo of me wearing it", "A link to the shirt in an online shop", "A picture of the shirt worn by a model (e.g. a screenshot)"];
+  const req = way === ways[0] ? "worn_way photo_worn" : way === ways[1] ? "worn_way shop_url" : way === ways[2] ? "worn_way photo_model" : "worn_way";
+  return Q("Show the shirt being worn. Choose the way that is easiest for you:", radios("worn_way", ways, true) + `
+    <div class="branch">
+      <div ${way === ways[0] ? "" : "hidden"}><p class="hint">A mirror photo from the front is fine. Stand straight, arms slightly away from the body. You are free to crop or cover your face, but the photo needs to show at least <b>from your jawline down to your hips</b>, so the whole shirt and how it sits are visible.</p>${upload("photo_worn", "Wearing the shirt, from the front", "Jawline to hips visible; shirt not tucked in.", "worn")}</div>
+      <div ${way === ways[1] ? "" : "hidden"}><p class="hint">The shop's page must show the shirt on a model. Another colour of the same shirt is fine.</p>${field("shop_url", "url", 'placeholder="https://…" aria-label="Link to the shirt in an online shop" maxlength="1000"')}</div>
+      <div ${way === ways[2] ? "" : "hidden"}><p class="hint">For example a screenshot from a shop or an old order, if the shop page no longer exists.</p>${upload("photo_model", "The shirt worn by a model", "The whole shirt visible, from the front.", "worn")}</div>
+    </div>`, { first: true, req, err: "Please choose a way and add the photo or link." }); },
+  rerenderOn: ["worn_way"] },
+{ id: "aboutshirt", part: "Part 1 · Your shirt", title: "About your reference shirt", render: () => `
+  ${Q("How well does this shirt fit you?", bipolar("ref_fit", [["Very poorly","Very well"]]), { first: true, req: "ref_fit" })}
+  ${Q("How would you describe how it fits you?", radios("ref_fit_desc", ["Body-hugging","Fitted","Regular","Relaxed","Oversized"]), { req: "ref_fit_desc" })}
+  ${Q("Roughly how much did this shirt cost?", radios("ref_price", ["€30 or under","€30–50","€50–100","Over €100","Don't know / it was a gift"]), { req: "ref_price" })}
+  ${Q("If you were buying a new shirt that fits like this one, which colours would you like to see?", radios("colpref", ["Colours similar to my shirt","These colours:","No preference"], true) + `<div class="opts"${A.colpref === "These colours:" ? "" : " hidden"}>${COLOURS.map(([c, h]) => `<label><input type="checkbox" data-k="colfams" data-multi value="${esc(c)}"${(A.colfams || []).includes(c) ? " checked" : ""}><span class="swatch" style="background:${h}"></span>${c}</label>`).join("")}</div>`, { req: A.colpref === "These colours:" ? "colpref colfams" : "colpref", err: "Please choose an option (and at least one colour)." })}`,
+  rerenderOn: ["colpref"] },
+{ id: "aboutyou", part: "Part 1 · Your shirt", title: "About you", render: () => `
+  ${Q("Age", radios("age", ["18–24","25–34","35–44","45–54","55+"]), { first: true, req: "age" })}
+  ${Q("Height", `<div class="inline"><label>${field("height_cm", "number", 'min="130" max="210" inputmode="numeric" style="width:110px" aria-label="Height in cm"')} <span class="unit">cm</span></label></div>`, { req: "height_cm" })}
+  ${Q("Your usual size for tops (EU)", radios("size_usual", ["XS / 34","S / 36","M / 38","L / 40","XL / 42","XXL / 44+"]), { req: "size_usual" })}
+  ${Q("In general, how do you like your shirts to fit?", radios("fit_pref", ["Fitted","Regular","Loose"]), { req: "fit_pref" })}
+  ${Q("How much do you usually spend on one shirt?", radios("spend", ["€30 or under","€30–50","€50–100","Over €100"]), { req: "spend" })}
+  ${Q("How many clothing items did you buy online in the last 12 months?", radios("online_items", ["1–5","6–10","11–20","More than 20"]), { req: "online_items" })}
+  ${Q("Of those, roughly how many did you send back?", radios("online_returns", ["None","A few","About half","Most"]), { req: "online_returns" })}` },
+{ id: "fitlike", part: "Part 1 · Your shirt", title: "What you like about its fit", render: () => `
+  <div class="intro"><p>Think about your reference shirt again. What do you like about the way it fits you?</p></div>
+  ${Q("Pick the three things you like most about how your shirt fits, and rank them 1st, 2nd and 3rd.", `<div class="rank">${ASPECTS.map(([k, d, s]) => `<div class="rank-row"><label for="rk-${k}">${d}<small>${s}</small></label><select id="rk-${k}" data-k="rank_${k}"><option value="">–</option>${["1","2","3"].map((v, j) => `<option value="${v}"${A["rank_" + k] === v ? " selected" : ""}>${["1st","2nd","3rd"][j]}</option>`).join("")}</select></div>`).join("")}</div>`, { first: true, req: "rank", err: "Please give exactly one 1st, one 2nd and one 3rd." })}
+  ${Q("In your own words: why do you like how this shirt fits?", area("why_like", "Why you like how this shirt fits"), { optional: true })}`,
+  check: () => { const v = ASPECTS.map(([k]) => A["rank_" + k]).filter(Boolean).sort().join(""); return v === "123" || "rank"; } },
+{ id: "email", part: "Part 1 · Your shirt", title: "Your link to part 2", submit: true, render: () => `
+  ${Q("Your e-mail address", field("email", "email", 'autocomplete="email" maxlength="200" aria-label="E-mail address"'), { first: true, req: "email", err: "Please enter a valid e-mail address.", hint: "Your personal link to part 2 is sent to this address. It is kept separately from your answers." })}`,
+  check: () => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(A.email || "") || "email" },
+{ id: "end1", part: "Part 1 · Your shirt", title: "Thank you, that's part 1", end: true, render: () => `
+  ${doneMark}
+  <div class="intro"><p>Your shirt will now be reviewed. Within two days you will receive an e-mail with your personal link to part 2 (about 15 minutes).</p></div>` }
+];
+const screenOut = reason => ({ id: "screenout", part: "Part 1 · Your shirt", title: "Thank you", end: true, render: () => `
+  <div class="intro"><p>Thank you for your interest. Unfortunately, you don't meet the requirements for this study, so it ends here.</p><p>You can close this page now.</p></div>` });
+
+/* ===== Part 2 screens ==================================================== */
+const imgs = (it, cls = "ph") => `<div class="${cls}">${[it.img_packshot, it.img_model].map((u, j) => u ? `<img src="${esc(u)}" alt="${esc(it.brand)} ${esc(it.name)}, ${j ? "worn by a model" : "product photo"}" loading="lazy" referrerpolicy="no-referrer">` : "<div></div>").join("")}</div>`;
+const cards = L => `<div class="cards" role="group" aria-label="List ${L}, ten shirts">${LISTS[L].map((it, i) => { const pos = String(i + 1); const on = A[`chosen_${L}`] === pos; return `<div class="card${on ? " chosen" : ""}">${imgs(it)}<span class="b">${esc(it.brand)}</span><span class="n">${esc(it.name)}</span><span class="p">€${esc(it.price)}</span><label class="tick"><input type="checkbox" data-k="tick_${L}" data-multi value="${pos}"${(A[`tick_${L}`] || []).includes(pos) ? " checked" : ""}> Would fit like mine</label><button type="button" class="choose" data-choose="${L}" data-pos="${pos}" aria-pressed="${on}">${on ? "Chosen" : "Choose this one"}</button></div>`; }).join("")}</div>`;
+const picked = L => { const it = LISTS[L][+A[`chosen_${L}`] - 1]; return it ? `<div class="picked">${imgs(it)}<div class="meta"><span>Your choice from list ${L}</span><b>${esc(it.brand)}</b><span>${esc(it.name)}</span><span style="font-family:var(--font-mono)">€${esc(it.price)}</span></div></div>` : ""; };
+const mini = L => `<div class="mini"><span class="t">List ${L}</span><div class="grid">${LISTS[L].map(it => it.img_packshot ? `<img src="${esc(it.img_packshot)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : "<div></div>").join("")}</div></div>`;
+const listScreen = L => ({ id: `list${L}`, part: "Part 2 · Your two lists", title: `List ${L}`, render: () => `
+  <div class="intro"><p>Take your time looking at the ten shirts below.</p><ol><li>Select <b>“Would fit like mine”</b> for every shirt that you believe would fit similarly to your reference shirt. If none would, leave them all blank.</li><li>Select the <b>one</b> shirt you would be most likely to buy. If none of them interest you, please still select the best option.</li></ol></div>
+  <div class="q first" data-req="chosen_${L}">${cards(L)}<p class="err">Please choose one shirt ("Choose this one").</p></div>
+  ${Q("Was there a shirt in this list whose cut you liked, but whose colour or print you didn't?", radios(`colourhid_${L}`, ["Yes","No"]), { req: `colourhid_${L}` })}` });
+const chosenScreen = L => ({ id: `chosen${L}`, part: "Part 2 · Your two lists", title: `List ${L}: the shirt you chose`, render: () => `
+  <div class="intro"><p>Please answer the following questions about the shirt you chose.</p></div>
+  ${picked(L)}
+  ${Q("How well do you expect this shirt to fit you?", likert(`h1_${L}`, H1), { req: likertKeys(`h1_${L}`, 3), err: "Please answer every row." })}
+  ${Q("Imagine you are shopping for this shirt. How likely would you be to buy it?", bipolar(`h2_${L}`, H2), { req: `h2_${L}` })}
+  ${Q("Would anything make you hesitate to buy this shirt?", checks(`barrier_${L}`, BARRIERS) + ((A[`barrier_${L}`] || []).includes(OTHER) ? `<div class="other-field">${field(`barrier_other_${L}`, "text", 'maxlength="200" aria-label="Please specify"')}</div>` : ""), { hint: "Tick all that apply. Leave blank if none apply.", ...((A[`barrier_${L}`] || []).includes(OTHER) ? { req: `barrier_other_${L}`, err: "Please fill in what “Other” means for you." } : {}) })}
+  ${Q("Thinking about how you chose this shirt:", likert(`h3_${L}`, H3), { req: likertKeys(`h3_${L}`, 3), err: "Please answer every row." })}
+  ${Q("If you ordered this shirt:", likert(`h4_${L}`, H4), { req: likertKeys(`h4_${L}`, 2), err: "Please answer every row." })}
+  ${Q("About this shirt:", `<div style="display:grid;gap:12px"><div style="display:grid;gap:6px">I know this brand. ${radios(`fam_brand_${L}`, ["Yes","No"])}</div><div style="display:grid;gap:6px">I have seen this exact shirt before. ${radios(`fam_seen_${L}`, ["Yes","No","Not sure"])}</div></div>`, { req: `fam_brand_${L} fam_seen_${L}`, err: "Please answer both." })}` });
+const P2 = [
+{ id: "welcome2", part: "Part 2 · Your two lists", title: "Welcome back", render: () => `
+  <div class="intro">
+    <p>This part simulates an online shopping experience. On the next pages, you will see two different lists of 10 shirts, one after the other. In each list, first mark any shirts that you think would fit similarly to your reference shirt, then choose the one shirt you would be most likely to buy.</p>
+    <p>Prices are shown in euros and sizes are EU sizes. In this scenario, returns are free within 30 days.</p>
+  </div>` },
+listScreen("A"), chosenScreen("A"), listScreen("B"), chosenScreen("B"),
+{ id: "compare", part: "Part 2 · Your two lists", title: "Comparing the lists", render: () => `
+  <div class="mini-lists">${mini("A")}${mini("B")}</div>
+  ${Q("If you were shopping for a shirt in general, which list would you rather shop from?", radios("pref_overall", ["List A","List B"]), { first: true, req: "pref_overall" })}
+  ${Q("Why?", area("why_list", "Why this list"), { optional: true })}
+  ${Q("If you were shopping for a shirt that fits similarly to your reference shirt, which list would you rather shop from?", radios("pref_fit", ["List A","List B"]), { req: "pref_fit" })}
+  ${Q("Is there anything else you would like to share, for example about the fit of the shirts or what you look for when buying a shirt?", area("other", "Other comments"), { optional: true })}` },
+{ id: "debrief", part: "Part 2 · Your two lists", title: "Thank you", submit: true, render: () => `
+  <div class="intro">
+    <p>Thank you for taking part.</p>
+    <p><b>How the lists were made:</b> One list was chosen by a model that looks for shirts with a similar fit to the shirt you described. The other list showed the shirts that were most popular in the same online shop, the same for everyone. The aim was to evaluate whether a reference shirt can improve the shopping experience.</p>
+  </div>
+  <div class="tryon">
+    <h2>Would you like to try on your two chosen shirts?</h2>
+    <p>In an additional part, about 10 participants in Germany will receive the two shirts they chose, try them on and evaluate the fit (about 20 minutes, in person or by video call). One shirt is then returned free of charge, and the other is yours to keep as a thank-you.</p>
+  ${Q("Are you interested in the try-on part?", radios("tryon", ["Yes, please contact me","No, thank you"]), { first: true, req: "tryon" })}
+  </div>` },
+{ id: "end2", part: "Done", title: "Your answers have been sent", end: true, render: () => `
+  ${doneMark}
+  <div class="intro"><p>You can close this page now.${A.tryon === "Yes, please contact me" ? " About the try-on, you will be contacted by e-mail." : ""}</p></div>` }
+];
+const messageScreen = (title, html) => ({ id: "msg", part: PART === 1 ? "Part 1 · Your shirt" : "Part 2 · Your two lists", title, end: true, render: () => `<div class="intro">${html}</div>` });
+
+/* ===== Demo lists (only used with ?demo or before the API is set) ======== */
+const demoImg = (fill, worn) => "data:image/svg+xml," + encodeURIComponent(worn
+  ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 90"><rect width="60" height="90" fill="#eef0ec"/><circle cx="30" cy="12" r="6" fill="#d9ddd8"/><path d="M21 20 L10 25 L6 37 L13 39 L16 33 L16 65 L44 65 L44 33 L47 39 L54 37 L50 25 L39 20 Q30 26 21 20 Z" fill="${fill}" stroke="#5b6672"/></svg>`
+  : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 90"><rect width="60" height="90" fill="#eef0ec"/><path d="M20 20 L8 26 L2 38 L11 42 L14 36 L14 68 L46 68 L46 36 L49 42 L58 38 L52 26 L40 20 Q30 28 20 20 Z" fill="${fill}" stroke="#5b6672"/></svg>`);
+const DEMO_LISTS = () => {
+  const mk = rows => rows.map(([brand, name, price, c], i) => ({ product_id: `demo-${i}`, brand, name, price, img_packshot: demoImg(c), img_model: demoImg(c, true) }));
+  return {
+    A: mk([["Vero Moda","Basic T-shirt","19.99","#2b2b2b"],["Only","T-shirt with round neck","14.99","#f4f4f2"],["Anna Field","Basic T-shirt","12.99","#9aa0a6"],["Even&Odd","Oversized T-shirt","9.99","#1f2a4d"],["Mango","Cotton T-shirt","25.99","#c9b49a"],["Pieces","Slim T-shirt","15.99","#2b2b2b"],["Esprit","Organic cotton T-shirt","22.99","#f4f4f2"],["Tom Tailor","Basic T-shirt","19.99","#6d7f95"],["Object","Boxy T-shirt","29.95","#e8e1d6"],["JDY","Fitted T-shirt","12.99","#2b2b2b"]]),
+    B: mk([["Levi's","The Perfect Tee","29.99","#f4f4f2"],["Calvin Klein","Logo T-shirt","34.99","#2b2b2b"],["Weekday","Essential T-shirt","27.99","#2b2b2b"],["Tommy Hilfiger","Regular T-shirt","39.99","#1f2a4d"],["s.Oliver","Basic T-shirt","15.99","#f4f4f2"],["Pull&Bear","Cropped T-shirt","12.99","#c9b49a"],["Gap","Vintage T-shirt","19.99","#9aa0a6"],["Lacoste","Crew-neck T-shirt","49.95","#f4f4f2"],["Abercrombie","Easy Tee","32.00","#2b2b2b"],["Tom Tailor Denim","Basic T-shirt","17.99","#e8e1d6"]])
+  };
+};
+
+/* ===== Engine ============================================================ */
+const el = document.getElementById("screen"), bar = document.getElementById("bar");
+const back = document.getElementById("back"), next = document.getElementById("next"), statusEl = document.getElementById("status");
+let SCREENS = PART === 1 ? P1.slice() : P2.slice();
+let cur = 0, busy = false;
+
+function setStatus(msg, bad) { statusEl.textContent = msg || ""; statusEl.classList.toggle("bad", !!bad); }
+function tick() { const s = SCREENS[cur]; if (!s) return; const now = Date.now(); T.per[s.id] = (T.per[s.id] || 0) + (now - T.screen) / 1000; T.screen = now; }
+function render() {
+  const s = SCREENS[cur];
+  el.innerHTML = `<div><div class="part">${s.part}</div><h1>${s.title}</h1></div>${s.render()}`;
+  const content = SCREENS.filter(x => !x.end).length;
+  bar.style.width = `${Math.round(Math.min(cur, content) / content * 100)}%`;
+  back.hidden = !!s.end; next.hidden = !!s.end;
+  back.disabled = cur === 0 || busy; next.disabled = busy;
+  next.textContent = s.submit ? "Send answers" : "Next";
+}
+function show(i) { tick(); cur = Math.max(0, Math.min(SCREENS.length - 1, i)); setStatus(""); render(); try { window.scrollTo({ top: 0 }); } catch (e) {} el.focus({ preventScroll: true }); }
+function endWith(screen) { tick(); SCREENS = SCREENS.slice(0, cur + 1).concat([screen]); show(cur + 1); }
+
+function validate() {
+  const s = SCREENS[cur];
+  let firstBad = null;
+  const extra = s.check ? s.check() : true;
+  // check() returns true, false (first question fails) or the req key of the question that fails ("measure" = width/length).
+  const badKey = typeof extra === "string" ? (extra === "measure" ? "width_cm" : extra) : null;
+  el.querySelectorAll(".q[data-req]").forEach(q => {
+    const keys = q.dataset.req.split(" ");
+    const ok = keys.every(k => k === "rank" || has(k)) && !(badKey && keys.includes(badKey));
+    q.classList.toggle("missing", !ok);
+    if (!ok && !firstBad) firstBad = q;
+  });
+  if (extra === false && !firstBad) firstBad = el.querySelector(".q[data-req]");
+  if (extra === false && firstBad) firstBad.classList.add("missing");
+  if (firstBad) { firstBad.scrollIntoView({ block: "center", behavior: "smooth" }); setStatus("Please complete the marked question.", true); return false; }
+  return true;
+}
+
+function flatAnswers() {
+  const out = {};
+  const skip = new Set(["email"]);
+  if (PART === 1) {
+    if (A.worn_way !== "A link to the shirt in an online shop") skip.add("shop_url");
+    if (A.colpref !== "These colours:") skip.add("colfams");
+    if (A.consent) { skip.add("consent"); out.consent = (A.consent || []).length === 2 ? "both" : "incomplete"; }
+  }
+  for (const [k, v] of Object.entries(A)) { if (skip.has(k)) continue; out[k] = Array.isArray(v) ? v.slice().sort().join("; ") : v; }
+  if (PART === 2) for (const L of ["A", "B"]) {
+    // Blank barrier = none apply (every other question on that screen is required, so the screen was answered).
+    if (!(A[`barrier_${L}`] || []).length) out[`barrier_${L}`] = "none";
+    if (!(A[`barrier_${L}`] || []).includes(OTHER)) delete out[`barrier_other_${L}`];
+  }
+  if (PART === 2) for (const L of ["A", "B"]) { const it = LISTS[L][+A[`chosen_${L}`] - 1]; if (it) out[`chosen_${L}_product`] = it.product_id; }
+  tick();
+  out.t_total_s = Math.round((Date.now() - T.start) / 1000);
+  for (const [k, v] of Object.entries(T.per)) out[`t_${k}_s`] = Math.round(v);
+  out.device = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "mobile" : "desktop";
+  return out;
+}
+function photosToSend() {
+  // Only the photos that belong to the answers given (a photo from a branch the participant left is not sent).
+  const keep = ["photo_flat", "photo_label"];
+  if (A.worn_way === "A photo of me wearing it") keep.push("photo_worn");
+  if (A.worn_way === "A picture of the shirt worn by a model (e.g. a screenshot)") keep.push("photo_model");
+  return Object.fromEntries(keep.filter(k => F[k]).map(k => [k.replace("photo_", ""), F[k].b64]));
+}
+async function post(payload) {
+  if (DEMO) { await new Promise(r => setTimeout(r, 600)); return { ok: true }; }
+  const res = await fetch(CONFIG.API, { method: "POST", body: JSON.stringify(payload) });
+  return res.json();
+}
+async function submit() {
+  busy = true; render(); setStatus(PART === 1 ? "Sending your answers and photos …" : "Sending your answers …");
+  try {
+    const payload = PART === 1
+      ? { action: "part1", email: A.email.trim(), answers: flatAnswers(), photos: photosToSend() }
+      : { action: "part2", pid: PID, answers: flatAnswers() };
+    const r = await post(payload);
+    if (!r || !r.ok) throw new Error(r && r.error || "unknown");
+    forget(); busy = false; show(cur + 1);
+  } catch (err) {
+    busy = false; render();
+    const done = String(err.message) === "done";
+    setStatus(done ? "Answers for this link have already been sent." : "Sending didn't work. Please check your connection and press “Send answers” again.", true);
+  }
+}
+
+back.addEventListener("click", () => show(cur - 1));
+next.addEventListener("click", () => {
+  if (busy || !validate()) return;
+  const s = SCREENS[cur];
+  if (s.after) { const out = s.after(); if (out) { if (!DEMO) post({ action: "screenout", reason: out }).catch(() => {}); forget(); endWith(screenOut(out)); return; } }
+  if (s.submit) { submit(); return; }
+  show(cur + 1);
+});
+
+el.addEventListener("change", async e => {
+  const t = e.target, k = t.dataset.k;
+  if (t.dataset.photo) { await takePhoto(t); return; }
+  if (!k) return;
+  if (t.dataset.multi !== undefined) {
+    const set = new Set(A[k] || []); t.checked ? set.add(t.value) : set.delete(t.value);
+    A[k] = [...set];
+    if (k.startsWith("barrier_") && t.value === OTHER) { A[k] = [...set]; save(); const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+  } else A[k] = t.value;
+  save();
+  // Text fields clear their error while typing (input event); clearing it on blur would move the Next button mid-tap.
+  const q = t.closest(".q"); if (q && (t.type === "radio" || t.type === "checkbox" || t.tagName === "SELECT")) q.classList.remove("missing");
+  if ((SCREENS[cur].rerenderOn || []).includes(k)) { const y = window.scrollY; render(); window.scrollTo(0, y); }
+});
+el.addEventListener("input", e => {
+  const t = e.target, k = t.dataset.k; if (!k || t.type === "radio" || t.type === "checkbox" || t.tagName === "SELECT") return;
+  A[k] = t.value; save();
+  const q = t.closest(".q"); if (q && q.classList.contains("missing")) { const keys = q.dataset.req.split(" "); if (keys.every(x => x === "rank" || has(x))) q.classList.remove("missing"); }
+});
+el.addEventListener("click", e => {
+  const b = e.target.closest("[data-choose]"); if (!b) return;
+  A[`chosen_${b.dataset.choose}`] = b.dataset.pos; save();
+  el.querySelectorAll(`[data-choose="${b.dataset.choose}"]`).forEach(x => { const on = x === b; x.setAttribute("aria-pressed", on); x.textContent = on ? "Chosen" : "Choose this one"; x.closest(".card").classList.toggle("chosen", on); });
+  b.closest(".q").classList.remove("missing");
+});
+
+async function takePhoto(input) {
+  const file = input.files && input.files[0]; if (!file) return;
+  const k = input.dataset.photo;
+  setStatus("Preparing photo …");
+  try {
+    const url = URL.createObjectURL(file);
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const s = Math.min(1, CONFIG.MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);   // redrawing also drops the photo's metadata (e.g. location)
+    URL.revokeObjectURL(url);
+    const data = c.toDataURL("image/jpeg", CONFIG.JPEG_QUALITY);
+    F[k] = { b64: data.split(",")[1], preview: data };
+    setStatus(""); const y = window.scrollY; render(); window.scrollTo(0, y);
+  } catch (err) {
+    setStatus("This photo couldn't be read. Please choose a JPG or PNG photo.", true);
+  }
+}
+
+async function start() {
+  if (DEMO) { const f = document.getElementById("flag"); f.hidden = false; f.textContent = "Test mode · nothing is sent"; }
+  if (PART === 2) {
+    if (DEMO) LISTS = DEMO_LISTS();
+    else {
+      el.innerHTML = `<div class="intro"><p>Loading your lists …</p></div>`; next.disabled = true; back.hidden = true;
+      try {
+        const r = await (await fetch(`${CONFIG.API}?action=lists&pid=${encodeURIComponent(PID)}`)).json();
+        if (!r.ok) { SCREENS = [messageScreen(r.error === "done" ? "Already done" : "Link not ready", r.error === "done" ? "<p>Answers for this link have already been sent. Thank you for taking part.</p>" : `<p>This link doesn't work yet. Please check that you used the full link from the e-mail, or write to ${esc(CONFIG.CONTACT)}.</p>`)]; cur = 0; render(); return; }
+        LISTS = r.lists;
+      } catch (err) { SCREENS = [messageScreen("Something went wrong", `<p>Your lists couldn't be loaded. Please check your connection and reload the page. If it keeps happening, write to ${esc(CONFIG.CONTACT)}.</p>`)]; cur = 0; render(); return; }
+    }
+  }
+  render();
+}
+start();
+</script>
+</body>
+</html>
