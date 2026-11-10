@@ -133,7 +133,21 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
 .card { border: 1px solid var(--rule); border-radius: 6px; padding: 8px; display: grid; gap: 6px; background: var(--paper); align-content: start; font-size: 13.5px; min-width: 0; }
 .ph { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.ph > * { aspect-ratio: 2 / 3; width: 100%; max-width: 100%; border-radius: 4px; background: var(--tile); object-fit: cover; display: block; }
+.ph > * { aspect-ratio: 2 / 3; width: 100%; max-width: 100%; border-radius: 4px; background: var(--tile); display: block; }
+.zoom { position: relative; padding: 0; border: 0; cursor: zoom-in; overflow: hidden; }
+.zoom img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.zoom::after { content: ""; position: absolute; right: 4px; bottom: 4px; width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(255,255,255,.88) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='8.5' cy='8.5' r='4.5' fill='none' stroke='%23333' stroke-width='1.6'/%3E%3Cpath d='M12 12l4 4M8.5 6.5v4M6.5 8.5h4' stroke='%23333' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center / 16px no-repeat; }
+.zoom:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+dialog.lb { border: 0; padding: 0; width: min(96vw, 1100px); max-width: 96vw; max-height: 94vh; border-radius: 8px; background: var(--paper); color: var(--ink); }
+dialog.lb::backdrop { background: rgba(10, 12, 14, .72); }
+.lb .lb-in { display: grid; gap: 10px; padding: 12px; }
+.lb .lb-head { display: flex; gap: 12px; align-items: start; justify-content: space-between; position: sticky; top: 0; z-index: 1; background: var(--paper); padding-block: 4px; }
+.lb .lb-head span { font-size: 14px; } .lb .lb-head b { display: block; }
+.lb .lb-close { font: inherit; font-size: 14px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); border-radius: 5px; padding: 7px 12px; cursor: pointer; flex: none; }
+.lb .lb-imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lb .lb-imgs img { width: 100%; max-height: 80vh; object-fit: contain; background: var(--tile); border-radius: 4px; }
+@media (max-width: 640px) { .lb .lb-imgs { grid-template-columns: minmax(0, 1fr); } .lb .lb-imgs img { max-height: none; } dialog.lb { overflow-y: auto; } }
 .card .b { font-weight: 600; }
 .card .n { color: var(--muted); font-size: 12.5px; line-height: 1.3; }
 .card .p { font-family: var(--font-mono); font-size: 13px; }
@@ -323,12 +337,12 @@ const screenOut = reason => ({ id: "screenout", part: "Part 1 · Your shirt", ti
   <div class="intro"><p>Thank you for your interest. Unfortunately, you don't meet the requirements for this study, so it ends here.</p><p>You can close this page now.</p></div>` });
 
 /* ===== Part 2 screens ==================================================== */
-const imgs = (it, cls = "ph") => `<div class="${cls}">${[it.img_packshot, it.img_model].map((u, j) => u ? `<img src="${esc(u)}" alt="${esc(it.brand)} ${esc(it.name)}, ${j ? "worn by a model" : "product photo"}" loading="lazy" referrerpolicy="no-referrer">` : "<div></div>").join("")}</div>`;
-const cards = L => `<div class="cards" role="group" aria-label="List ${L}, ten shirts">${LISTS[L].map((it, i) => { const pos = String(i + 1); const on = A[`chosen_${L}`] === pos; return `<div class="card${on ? " chosen" : ""}">${imgs(it)}<span class="b">${esc(it.brand)}</span><span class="n">${esc(it.name)}</span><span class="p">€${esc(it.price)}</span><label class="tick"><input type="checkbox" data-k="tick_${L}" data-multi value="${pos}"${(A[`tick_${L}`] || []).includes(pos) ? " checked" : ""}> Would fit like mine</label><button type="button" class="choose" data-choose="${L}" data-pos="${pos}" aria-pressed="${on}">${on ? "Chosen" : "Choose this one"}</button></div>`; }).join("")}</div>`;
-const picked = L => { const it = LISTS[L][+A[`chosen_${L}`] - 1]; return it ? `<div class="picked">${imgs(it)}<div class="meta"><span>Your choice from list ${L}</span><b>${esc(it.brand)}</b><span>${esc(it.name)}</span><span style="font-family:var(--font-mono)">€${esc(it.price)}</span></div></div>` : ""; };
+const imgs = (it, ref, cls = "ph") => `<div class="${cls}">${[it.img_packshot, it.img_model].map((u, j) => u ? `<button type="button" class="zoom" data-zoom="${ref}" data-view="${j}" aria-label="Enlarge: ${esc(it.brand)} ${esc(it.name)}, ${j ? "worn by a model" : "product photo"}"><img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer"></button>` : "<div></div>").join("")}</div>`;
+const cards = L => `<div class="cards" role="group" aria-label="List ${L}, ten shirts">${LISTS[L].map((it, i) => { const pos = String(i + 1); const on = A[`chosen_${L}`] === pos; return `<div class="card${on ? " chosen" : ""}">${imgs(it, `${L}:${i}`)}<span class="b">${esc(it.brand)}</span><span class="n">${esc(it.name)}</span><span class="p">€${esc(it.price)}</span><label class="tick"><input type="checkbox" data-k="tick_${L}" data-multi value="${pos}"${(A[`tick_${L}`] || []).includes(pos) ? " checked" : ""}> Would fit like mine</label><button type="button" class="choose" data-choose="${L}" data-pos="${pos}" aria-pressed="${on}">${on ? "Chosen" : "Choose this one"}</button></div>`; }).join("")}</div>`;
+const picked = L => { const it = LISTS[L][+A[`chosen_${L}`] - 1]; return it ? `<div class="picked">${imgs(it, `${L}:${+A[`chosen_${L}`] - 1}`)}<div class="meta"><span>Your choice from list ${L}</span><b>${esc(it.brand)}</b><span>${esc(it.name)}</span><span style="font-family:var(--font-mono)">€${esc(it.price)}</span></div></div>` : ""; };
 const mini = L => `<div class="mini"><span class="t">List ${L}</span><div class="grid">${LISTS[L].map(it => it.img_packshot ? `<img src="${esc(it.img_packshot)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : "<div></div>").join("")}</div></div>`;
 const listScreen = L => ({ id: `list${L}`, part: "Part 2 · Your two lists", title: `List ${L}`, render: () => `
-  <div class="intro"><p>Take your time looking at the ten shirts below.</p><ol><li>Select <b>“Would fit like mine”</b> for every shirt that you believe would fit similarly to your reference shirt. If none would, leave them all blank.</li><li>Select the <b>one</b> shirt you would be most likely to buy. If none of them interest you, please still select the best option.</li></ol></div>
+  <div class="intro"><p>Take your time looking at the ten shirts below. Tap or click a photo to see it larger.</p><ol><li>Select <b>“Would fit like mine”</b> for every shirt that you believe would fit similarly to your reference shirt. If none would, leave them all blank.</li><li>Select the <b>one</b> shirt you would be most likely to buy. If none of them interest you, please still select the best option.</li></ol></div>
   <div class="q first" data-req="chosen_${L}">${cards(L)}<p class="err">Please choose one shirt ("Choose this one").</p></div>
   ${Q("Was there a shirt in this list whose cut you liked, but whose colour or print you didn't?", radios(`colourhid_${L}`, ["Yes","No"]), { req: `colourhid_${L}` })}` });
 const chosenScreen = L => ({ id: `chosen${L}`, part: "Part 2 · Your two lists", title: `List ${L}: the shirt you chose`, render: () => `
@@ -496,11 +510,25 @@ el.addEventListener("input", e => {
   const q = t.closest(".q"); if (q && q.classList.contains("missing")) { const keys = q.dataset.req.split(" "); if (keys.every(x => x === "rank" || has(x))) q.classList.remove("missing"); }
 });
 el.addEventListener("click", e => {
+  const z = e.target.closest("[data-zoom]"); if (z) { openZoom(z); return; }
   const b = e.target.closest("[data-choose]"); if (!b) return;
   A[`chosen_${b.dataset.choose}`] = b.dataset.pos; save();
   el.querySelectorAll(`[data-choose="${b.dataset.choose}"]`).forEach(x => { const on = x === b; x.setAttribute("aria-pressed", on); x.textContent = on ? "Chosen" : "Choose this one"; x.closest(".card").classList.toggle("chosen", on); });
   b.closest(".q").classList.remove("missing");
 });
+
+// Enlarged view of one shirt (both photos); the number of enlargements per list is kept as zooms_<L>.
+const lb = document.createElement("dialog"); lb.className = "lb"; document.body.appendChild(lb);
+lb.addEventListener("click", e => { if (e.target === lb || e.target.closest(".lb-close")) lb.close(); });
+lb.addEventListener("close", () => { if (lb._from) lb._from.focus(); });
+function openZoom(btn) {
+  const [L, i] = btn.dataset.zoom.split(":"), it = LISTS[L] && LISTS[L][+i]; if (!it) return;
+  A[`zooms_${L}`] = (+A[`zooms_${L}`] || 0) + 1; save();
+  const ph = [it.img_packshot, it.img_model].filter(Boolean);
+  const order = btn.dataset.view === "1" ? ph.slice().reverse() : ph;   // the photo tapped comes first
+  lb.innerHTML = `<div class="lb-in"><div class="lb-head"><span><b>${esc(it.brand)}</b>${esc(it.name)} · €${esc(it.price)}</span><button type="button" class="lb-close">Close</button></div><div class="lb-imgs">${order.map(u => `<img src="${esc(u)}" alt="" referrerpolicy="no-referrer">`).join("")}</div></div>`;
+  lb._from = btn; lb.showModal(); lb.querySelector(".lb-close").focus();
+}
 
 function loadImg(blob) {
   const url = URL.createObjectURL(blob);
