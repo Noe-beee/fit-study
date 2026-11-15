@@ -39,7 +39,7 @@ img { max-width: 100%; }
 h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 4vw, 34px); line-height: 1.15; margin: 4px 0 0; text-wrap: balance; }
 .intro { display: grid; gap: 10px; max-width: 66ch; }
 .intro p { margin: 0; }
-.intro ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; }
+.intro ol, .intro ul { margin: 0; padding-left: 22px; display: grid; gap: 4px; }
 
 .q { display: grid; gap: 10px; padding-top: 20px; border-top: 1px solid var(--rule); min-width: 0; }
 .q.first { border-top: 0; padding-top: 0; }
@@ -228,11 +228,11 @@ const ASPECTS = [
   ["hem", "Hem", "straight, curved, longer at the back, split …"],
   ["fabric", "Fabric", "drape, stretch, thickness, shine"]
 ];
-const BARRIERS = ["Colour","Print or pattern","Fabric","Price","Brand","It is not my style","I already own a very similar shirt","I'm not sure it would fit","I'm not sure which size to take","Other (please specify)"];
+const BARRIERS = ["Colour","Print or pattern","Fabric","Price","Brand","It is not my style","I already own a very similar top","I'm not sure it would fit","I'm not sure which size to take","Other (please specify)"];
 const OTHER = BARRIERS[BARRIERS.length - 1];
-const H1 = ["I expect this shirt to fit me the way my reference shirt does.","I am concerned that this shirt may not fit me well.","I am concerned that this shirt will fit me differently from how it fits on the model."];
+const H1 = ["I expect this top to fit me the way my reference top does.","I am concerned that this top may not fit me well.","I am concerned that this top will fit me differently from how it fits on the model."];
 const H2 = [["Very unlikely","Very likely"]];
-const H3 = ["I was unsure which shirt to choose.","I feel confident about the shirt I chose.","I am convinced I chose the best shirt from this list."];
+const H3 = ["I was unsure which top to choose.","I feel confident about the top I chose.","I am convinced I chose the best top from this list."];
 const H4 = ["How likely is it that you would send it back?", "How likely is it that you would also order it in a second size, to be safe?"];   // h4_L_1 return, h4_L_2 bracketing (likelihood scale)
 
 /* ===== State ============================================================= */
@@ -263,7 +263,10 @@ const ICON = {
   label: '<svg viewBox="0 0 60 60" aria-hidden="true"><rect x="14" y="8" width="32" height="44" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M20 20 H40 M20 27 H36 M20 34 H40 M20 41 H30" stroke="currentColor" stroke-width="1.6"/></svg>'
 };
 const upload = (k, title, hint, kind) => { const n = nid("up"); return `<label class="drop${F[k] ? " has" : ""}" for="${n}"><input type="file" accept="image/*" id="${n}" data-photo="${k}"><span class="pic">${F[k] ? `<img alt="Your photo" src="${F[k].preview}">` : ICON[kind]}</span><span><span class="t">${title}</span><br><span class="h">${hint}</span><br><span class="btn-like">${F[k] ? "Choose a different photo" : "Choose a photo"}</span></span></label>`; };
-const measureSVG = `<svg viewBox="0 0 220 190" role="img" aria-label="A shirt lying flat. Width is measured straight across from armpit to armpit. Length is measured from the highest point of the shoulder down to the hem.">
+const MEASURE_ERR = "Please enter both measurements in cm.";
+const MEASURE_WARN = "These measurements are unusual for a top. Please make sure you measured in cm, straight across from armpit to armpit, and straight down from the highest point of the shoulder to the hem. If they are right, press Next again.";
+let measureWarned = "", checkMsg = "";
+const measureSVG = `<svg viewBox="0 0 220 190" role="img" aria-label="A top lying flat. Width is measured straight across from armpit to armpit. Length is measured from the highest point of the shoulder down to the hem.">
   <path d="M78 14 L40 30 L12 70 L38 82 L52 62 L52 176 L168 176 L168 62 L182 82 L208 70 L180 30 L142 14 Q110 40 78 14 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" opacity=".7"/>
   <line x1="53" y1="66" x2="167" y2="66" stroke="var(--accent)" stroke-width="2"/><path d="M53 61 V71 M167 61 V71" stroke="var(--accent)" stroke-width="2"/>
   <text x="110" y="60" text-anchor="middle" class="lbl">WIDTH</text>
@@ -273,116 +276,129 @@ const doneMark = `<svg class="done-mark" viewBox="0 0 54 54" aria-hidden="true">
 
 /* ===== Part 1 screens ==================================================== */
 const ELIG_OUT = {
-  own: "people who own a short-sleeve shirt whose fit they like",
+  own: "people who own a short-sleeve T-shirt or top whose fit they like",
   country: "people who live in Europe or the US",
-  womens: "people who usually buy their shirts in the women's section"
+  womens: "people who usually buy their T-shirts and tops in the women's section"
 };
 const P1 = [
-{ id: "welcome", part: "Part 1 · Your shirt", title: "Welcome", render: () => `
+{ id: "welcome", part: "Part 1 · Your top", title: "Welcome", render: () => `
   <div class="intro">
-    <p>Thank you for your interest. This study is part of my master's thesis at HWR Berlin and looks at whether a shirt you already own and like can help you find new shirts online.</p>
-    <p><b>How it works:</b> First, you describe one shirt you own whose fit you like (about 10 minutes). Within two days you will receive a personal link. There you will see two lists of shirts from an online shop, choose one shirt from each, and answer some questions (about 15 minutes).</p>
+    <p>Thank you for your interest. This study is part of my master's thesis at HWR Berlin and looks at whether a top you already own and like can help you find new tops online.</p>
+    <p><b>How it works:</b> First, you describe one T-shirt or top you own whose fit you like (about 10 minutes). Within two days you will receive a personal link. There you will see two lists of tops from an online shop, choose one from each, and answer some questions (about 15 minutes).</p>
   </div>
-  <p class="disclaimer"><b>Your data:</b> Your name is not stored with your answers. Your e-mail address is used only to send you the link to part 2 and is kept separately from your answers. Your photos are used only to describe your shirt: features are extracted, such as its length and how wide the body and sleeves are. Once the features have been extracted, the photos are deleted. Taking part is voluntary, and you can stop or withdraw at any time without giving a reason.</p>
-  ${Q("Consent", checks("consent", ["I have read the information above and agree to take part.", "I agree that the photos I upload (my shirt, and me wearing it if I choose that option) are used to extract the shirt's features and are then deleted."], true), { req: "consent", err: "Please tick both boxes to take part." })}
+  <p class="disclaimer"><b>Your data:</b> Your name is not stored with your answers. Your e-mail address is used only to send you the link to part 2 and is kept separately from your answers. Your photos are used only to describe your top: features are extracted, such as its length and how wide the body and sleeves are. Once the features have been extracted, the photos are deleted. Taking part is voluntary, and you can stop or withdraw at any time without giving a reason.</p>
+  ${Q("Consent", checks("consent", ["I have read the information above and agree to take part.", "I agree that the photos I upload (my top, and me wearing it if I choose that option) are used to extract the top's features and are then deleted."], true), { req: "consent", err: "Please tick both boxes to take part." })}
   <p class="disclaimer" style="border-top:0;padding-top:0"><b>Contact:</b> ${esc(CONFIG.CONTACT)}</p>`,
   check: () => (A.consent || []).length === 2 },
-{ id: "elig", part: "Part 1 · Your shirt", title: "A few questions first", render: () => `
-  ${Q("Do you own a short-sleeve shirt that fits you the way you like?", radios("elig_own", ["Yes","No"]), { first: true, req: "elig_own" })}
+{ id: "elig", part: "Part 1 · Your top", title: "A few questions first", render: () => `
+  ${Q("Do you own a short-sleeve T-shirt or top that fits you the way you like?", radios("elig_own", ["Yes","No"]), { first: true, req: "elig_own" })}
   ${Q("Where do you live?", radios("elig_country", ["Germany","Other EU country","United Kingdom","USA","Other"]), { req: "elig_country" })}
-  ${Q("Do you usually buy your shirts in the women's section?", radios("elig_womens", ["Yes","No"]), { req: "elig_womens" })}
+  ${Q("Do you usually buy your T-shirts and tops in the women's section?", radios("elig_womens", ["Yes","No"]), { req: "elig_womens" })}
   ${Q("Have you bought clothes online in the last 12 months?", radios("elig_online", ["Yes","No"]), { req: "elig_online" })}`,
   after: () => A.elig_own === "No" ? "own" : A.elig_country === "Other" ? "country" : A.elig_womens === "No" ? "womens" : null },
-{ id: "shirt", part: "Part 1 · Your shirt", title: "Your reference shirt", render: () => `
-  <div class="intro"><p>Think of one short-sleeve shirt you own whose fit you like. This is your <b>reference shirt</b>. It can have any neckline (crew, V, scoop, boat …), but please don't choose a button-up shirt or blouse.</p></div>
-  ${Q("1. Take a photo of the shirt lying flat", upload("photo_flat", "Lying flat, front side up", "Smooth it out, sleeves to the sides, the whole shirt in the picture, nothing else on the surface.", "flat"), { first: true, req: "photo_flat", err: "Please add a photo of the shirt lying flat.", hint: "Lay the shirt on a plain, flat surface (such as on the bed or floor) and hold the phone straight above it." })}
-  ${Q("2. Measure the shirt while it lies flat", `<div class="measure">${measureSVG}<div style="display:grid;gap:12px"><p class="hint">Use a tape measure, in cm.<br><b>Width:</b> straight across, from armpit to armpit.<br><b>Length:</b> from the highest point of the shoulder, next to the collar, straight down to the hem.</p><div class="inline"><label>Width ${field("width_cm", "number", 'step="0.5" min="20" max="120" inputmode="decimal" style="width:90px"')} <span class="unit">cm</span></label><label>Length ${field("length_cm", "number", 'step="0.5" min="30" max="120" inputmode="decimal" style="width:90px"')} <span class="unit">cm</span></label></div></div></div>`, { req: "width_cm length_cm", err: "Please enter both measurements in cm." })}
-  ${Q("3. Which size is your shirt?", field("size_label", "text", 'placeholder="e.g. M, 38, 10" aria-label="Size" maxlength="40"'), { req: "size_label", hint: "As written on the label, for example M, 38 or 10. If the label is gone, your best guess." })}
-  ${Q("4. Take a photo of the fabric label", upload("photo_label", "The care label", "Close-up, in focus.", "label"), { optional: true, hint: "If the care label is still there: the fabric composition (for example 95% cotton, 5% elastane)." })}`,
-  check: () => { const w = +A.width_cm, l = +A.length_cm; return w >= 20 && w <= 120 && l >= 30 && l <= 120 || "measure"; } },
-{ id: "worn", part: "Part 1 · Your shirt", title: "Your shirt, worn", render: () => {
-  const way = A.worn_way, ways = ["A photo of me wearing it", "A link to the shirt in an online shop", "A picture of the shirt worn by a model (e.g. a screenshot)"];
+{ id: "shirt", part: "Part 1 · Your top", title: "Your reference top", render: () => {
+  const way = A.worn_way, ways = ["A photo of me wearing it", "A link to the top in an online shop", "A picture of the top worn by a model (e.g. a screenshot)"];
   const req = way === ways[0] ? "worn_way photo_worn" : way === ways[1] ? "worn_way shop_url" : way === ways[2] ? "worn_way photo_model" : "worn_way";
-  return Q("Show the shirt being worn. Choose the way that is easiest for you:", radios("worn_way", ways, true) + `
+  return `
+  <div class="intro"><p>Think of one short-sleeve T-shirt or top you own whose fit you like. This is your <b>reference top</b>. It can have any neckline (crew, V, scoop, boat …), but please don't choose a button-up shirt or blouse.</p>
+  <p>For this top you will need:</p><ul><li>a photo of it lying flat</li><li>its width and length, measured in cm</li><li>its size (as on the label, or your best guess)</li><li>a view of it being worn (can be a model image, a link to the top in an online shop, or a photo of you wearing it)</li></ul></div>
+  ${Q("1. Take a photo of the top lying flat", upload("photo_flat", "Lying flat, front side up", "Smooth it out, sleeves to the sides, the whole top in the picture, nothing else on the surface.", "flat"), { first: true, req: "photo_flat", err: "Please add a photo of the top lying flat.", hint: "Lay the top on a plain, flat surface (such as on the bed or floor) and hold the phone straight above it." })}
+  ${Q("2. Measure the top while it lies flat", `<div class="measure">${measureSVG}<div style="display:grid;gap:12px"><p class="hint">Use a tape measure, in cm.<br><b>Width:</b> straight across, from armpit to armpit.<br><b>Length:</b> from the highest point of the shoulder, next to the collar, straight down to the hem.</p><div class="inline"><label>Width ${field("width_cm", "number", 'step="0.5" min="0" inputmode="decimal" style="width:90px"')} <span class="unit">cm</span></label><label>Length ${field("length_cm", "number", 'step="0.5" min="0" inputmode="decimal" style="width:90px"')} <span class="unit">cm</span></label></div></div></div>`, { req: "width_cm length_cm", err: MEASURE_ERR })}
+  ${Q("3. Which size is your top?", field("size_label", "text", 'placeholder="e.g. M, 38, 10" aria-label="Size" maxlength="40"'), { req: "size_label", hint: "As written on the label, for example M, 38 or 10. If the label is gone, your best guess." })}
+  ${Q("4. Show the top being worn. Choose the way that is easiest for you:", radios("worn_way", ways, true) + `
     <div class="branch">
-      <div ${way === ways[0] ? "" : "hidden"}><p class="hint">A mirror photo from the front is fine. Stand straight, arms slightly away from the body. You are free to crop or cover your face, but the photo needs to show at least <b>from your jawline down to your hips</b>, so the whole shirt and how it sits are visible.</p>${upload("photo_worn", "Wearing the shirt, from the front", "Jawline to hips visible; shirt not tucked in.", "worn")}</div>
-      <div ${way === ways[1] ? "" : "hidden"}><p class="hint">The shop's page must show the shirt on a model. Another colour of the same shirt is fine.</p>${field("shop_url", "url", 'placeholder="https://…" aria-label="Link to the shirt in an online shop" maxlength="1000"')}</div>
-      <div ${way === ways[2] ? "" : "hidden"}><p class="hint">For example a screenshot from a shop or an old order, if the shop page no longer exists.</p>${upload("photo_model", "The shirt worn by a model", "The whole shirt visible, from the front.", "worn")}</div>
-    </div>`, { first: true, req, err: "Please choose a way and add the photo or link." }); },
+      <div ${way === ways[0] ? "" : "hidden"}><p class="hint">A mirror photo from the front is fine. Stand straight, arms slightly away from the body. You are free to crop or cover your face, but the photo needs to show at least <b>from your jawline down to your hips</b>, so the whole top and how it sits are visible.</p>${upload("photo_worn", "Wearing the top, from the front", "Jawline to hips visible; top not tucked in.", "worn")}</div>
+      <div ${way === ways[1] ? "" : "hidden"}><p class="hint">The shop's page must show the top on a model. Another colour of the same top is fine.</p>${field("shop_url", "url", 'placeholder="https://…" aria-label="Link to the top in an online shop" maxlength="1000"')}</div>
+      <div ${way === ways[2] ? "" : "hidden"}><p class="hint">For example a screenshot from a shop or an old order, if the shop page no longer exists.</p>${upload("photo_model", "The top worn by a model", "The whole top visible, from the front.", "worn")}</div>
+    </div>`, { req, err: "Please choose a way and add the photo or link." })}
+  ${Q("5. Take a photo of the fabric label", upload("photo_label", "The care label", "Close-up, in focus.", "label"), { optional: true, hint: "If the care label is still there: the fabric composition (for example 95% cotton, 5% elastane)." })}`; },
+  // Measurements outside 20–120 cm are unusual but possible (e.g. a very stretchy crop top): the first Next shows a
+  // warning; pressing Next again with the same values accepts them.
+  check: () => {
+    const w = +A.width_cm, l = +A.length_cm, errEl = el.querySelector('.q[data-req="width_cm length_cm"] .err');
+    if (errEl) errEl.textContent = MEASURE_ERR;
+    if (!(w > 0 && l > 0)) return "measure";
+    const key = `${w}|${l}`;
+    if ((w >= 20 && w <= 120 && l >= 20 && l <= 120) || measureWarned === key) return true;
+    measureWarned = key;
+    if (errEl) errEl.textContent = MEASURE_WARN;
+    checkMsg = "Please check the marked measurements. If they are right, press Next again.";
+    return "measure";
+  },
   rerenderOn: ["worn_way"] },
-{ id: "aboutshirt", part: "Part 1 · Your shirt", title: "About your reference shirt", render: () => `
-  ${Q("How well does this shirt fit you?", bipolar("ref_fit", [["Very poorly","Very well"]]), { first: true, req: "ref_fit" })}
+{ id: "aboutshirt", part: "Part 1 · Your top", title: "About your reference top", render: () => `
+  ${Q("How well does this top fit you?", bipolar("ref_fit", [["Very poorly","Very well"]]), { first: true, req: "ref_fit" })}
   ${Q("How would you describe how it fits you?", radios("ref_fit_desc", ["Body-hugging","Fitted","Regular","Relaxed","Oversized"]), { req: "ref_fit_desc" })}
-  ${Q("Roughly how much did this shirt cost?", radios("ref_price", ["€30 or under","€30–50","€50–100","Over €100","Don't know / it was a gift"]), { req: "ref_price" })}` },
-{ id: "aboutyou", part: "Part 1 · Your shirt", title: "About you", render: () => `
+  ${Q("Roughly how much did this top cost?", radios("ref_price", ["€30 or under","€30–50","€50–100","Over €100","Don't know / it was a gift"]), { req: "ref_price" })}` },
+{ id: "aboutyou", part: "Part 1 · Your top", title: "About you", render: () => `
   ${Q("Age", radios("age", ["18–24","25–34","35–44","45–54","55+"]), { first: true, req: "age" })}
   ${Q("Height", `<div class="inline"><label>${field("height_cm", "number", 'min="130" max="210" inputmode="numeric" style="width:110px" aria-label="Height in cm"')} <span class="unit">cm</span></label></div>`, { req: "height_cm" })}
   ${Q("Your usual size for tops (EU)", radios("size_usual", ["XS / 34","S / 36","M / 38","L / 40","XL / 42","XXL / 44+"]), { req: "size_usual" })}
-  ${Q("In general, how do you like your shirts to fit?", radios("fit_pref", ["Fitted","Regular","Loose"]), { req: "fit_pref" })}
-  ${Q("How much do you usually spend on one shirt?", radios("spend", ["€30 or under","€30–50","€50–100","Over €100"]), { req: "spend" })}
+  ${Q("In general, how do you like your T-shirts and tops to fit?", radios("fit_pref", ["Fitted","Regular","Loose"]), { req: "fit_pref" })}
+  ${Q("How much do you usually spend on one T-shirt or top?", radios("spend", ["€30 or under","€30–50","€50–100","Over €100"]), { req: "spend" })}
   ${Q("How many clothing items did you buy online in the last 12 months?", radios("online_items", ["1–5","6–10","11–20","More than 20"]), { req: "online_items" })}
   ${Q("Of those, roughly how many did you send back?", radios("online_returns", ["None","A few","About half","Most"]), { req: "online_returns" })}` },
-{ id: "fitlike", part: "Part 1 · Your shirt", title: "What you like about its fit", render: () => `
-  <div class="intro"><p>Think about your reference shirt again. What do you like about the way it fits you?</p></div>
-  ${Q("Pick the three things you like most about how your shirt fits, and rank them 1st, 2nd and 3rd.", `<div class="rank">${ASPECTS.map(([k, d, s]) => `<div class="rank-row"><label for="rk-${k}">${d}<small>${s}</small></label><select id="rk-${k}" data-k="rank_${k}"><option value="">–</option>${["1","2","3"].map((v, j) => `<option value="${v}"${A["rank_" + k] === v ? " selected" : ""}>${["1st","2nd","3rd"][j]}</option>`).join("")}</select></div>`).join("")}</div>`, { first: true, req: "rank", err: "Please give exactly one 1st, one 2nd and one 3rd." })}
-  ${Q("In your own words: why do you like how this shirt fits?", area("why_like", "Why you like how this shirt fits"), { optional: true })}`,
+{ id: "fitlike", part: "Part 1 · Your top", title: "What you like about its fit", render: () => `
+  <div class="intro"><p>Think about your reference top again. What do you like about the way it fits you?</p></div>
+  ${Q("Pick the three things you like most about how your top fits, and rank them 1st, 2nd and 3rd.", `<div class="rank">${ASPECTS.map(([k, d, s]) => `<div class="rank-row"><label for="rk-${k}">${d}<small>${s}</small></label><select id="rk-${k}" data-k="rank_${k}"><option value="">–</option>${["1","2","3"].map((v, j) => `<option value="${v}"${A["rank_" + k] === v ? " selected" : ""}>${["1st","2nd","3rd"][j]}</option>`).join("")}</select></div>`).join("")}</div>`, { first: true, req: "rank", err: "Please give exactly one 1st, one 2nd and one 3rd." })}
+  ${Q("In your own words: why do you like how this top fits?", area("why_like", "Why you like how this top fits"), { optional: true })}`,
   check: () => { const v = ASPECTS.map(([k]) => A["rank_" + k]).filter(Boolean).sort().join(""); return v === "123" || "rank"; } },
-{ id: "email", part: "Part 1 · Your shirt", title: "Your link to part 2", submit: true, render: () => `
+{ id: "email", part: "Part 1 · Your top", title: "Your link to part 2", submit: true, render: () => `
   ${Q("Your e-mail address", field("email", "email", 'autocomplete="email" maxlength="200" aria-label="E-mail address"'), { first: true, req: "email", err: "Please enter a valid e-mail address.", hint: "Your personal link to part 2 is sent to this address. It is kept separately from your answers." })}`,
   check: () => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(A.email || "") || "email" },
-{ id: "end1", part: "Part 1 · Your shirt", title: "Thank you, that's part 1", end: true, render: () => `
+{ id: "end1", part: "Part 1 · Your top", title: "Thank you, that's part 1", end: true, render: () => `
   ${doneMark}
-  <div class="intro"><p>Your shirt will now be reviewed. Within two days you will receive an e-mail with your personal link to part 2 (about 15 minutes).</p></div>` }
+  <div class="intro"><p>Your top will now be reviewed. Within two days you will receive an e-mail with your personal link to part 2 (about 15 minutes).</p></div>` }
 ];
-const screenOut = reason => ({ id: "screenout", part: "Part 1 · Your shirt", title: "Thank you", end: true, render: () => `
+const screenOut = reason => ({ id: "screenout", part: "Part 1 · Your top", title: "Thank you", end: true, render: () => `
   <div class="intro"><p>Thank you for your interest. Unfortunately, you don't meet the requirements for this study, so it ends here.</p><p>You can close this page now.</p></div>` });
 
 /* ===== Part 2 screens ==================================================== */
 const imgs = (it, ref, cls = "ph") => `<div class="${cls}">${[it.img_packshot, it.img_model].map((u, j) => u ? `<button type="button" class="zoom" data-zoom="${ref}" data-view="${j}" aria-label="Enlarge: ${esc(it.brand)} ${esc(it.name)}, ${j ? "worn by a model" : "product photo"}"><img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer"></button>` : "<div></div>").join("")}</div>`;
-const cards = L => `<div class="cards" role="group" aria-label="List ${L}, ten shirts">${LISTS[L].map((it, i) => { const pos = String(i + 1); const on = A[`chosen_${L}`] === pos; return `<div class="card${on ? " chosen" : ""}">${imgs(it, `${L}:${i}`)}<span class="b">${esc(it.brand)}</span><span class="n">${esc(it.name)}</span><span class="p">€${esc(it.price)}</span><label class="tick"><input type="checkbox" data-k="tick_${L}" data-multi value="${pos}"${(A[`tick_${L}`] || []).includes(pos) ? " checked" : ""}> Would fit like mine</label><button type="button" class="choose" data-choose="${L}" data-pos="${pos}" aria-pressed="${on}">${on ? "Chosen" : "Choose this one"}</button></div>`; }).join("")}</div>`;
+const cards = L => `<div class="cards" role="group" aria-label="List ${L}, ten tops">${LISTS[L].map((it, i) => { const pos = String(i + 1); const on = A[`chosen_${L}`] === pos; return `<div class="card${on ? " chosen" : ""}">${imgs(it, `${L}:${i}`)}<span class="b">${esc(it.brand)}</span><span class="n">${esc(it.name)}</span><span class="p">€${esc(it.price)}</span><label class="tick"><input type="checkbox" data-k="tick_${L}" data-multi value="${pos}"${(A[`tick_${L}`] || []).includes(pos) ? " checked" : ""}> Would fit like mine</label><button type="button" class="choose" data-choose="${L}" data-pos="${pos}" aria-pressed="${on}">${on ? "Chosen" : "Choose this one"}</button></div>`; }).join("")}</div>`;
 const picked = L => { const it = LISTS[L][+A[`chosen_${L}`] - 1]; return it ? `<div class="picked">${imgs(it, `${L}:${+A[`chosen_${L}`] - 1}`)}<div class="meta"><span>Your choice from list ${L}</span><b>${esc(it.brand)}</b><span>${esc(it.name)}</span><span style="font-family:var(--font-mono)">€${esc(it.price)}</span></div></div>` : ""; };
 const mini = L => `<div class="mini"><span class="t">List ${L}</span><div class="grid">${LISTS[L].map(it => it.img_packshot ? `<img src="${esc(it.img_packshot)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : "<div></div>").join("")}</div></div>`;
 const listScreen = L => ({ id: `list${L}`, part: "Part 2 · Your two lists", title: `List ${L}`, render: () => `
-  <div class="intro"><p>Take your time looking at the ten shirts below. Tap or click a photo to see it larger.</p><ol><li>Select <b>“Would fit like mine”</b> for every shirt that you believe would fit similarly to your reference shirt. If none would, leave them all blank.</li><li>Select the <b>one</b> shirt you would be most likely to buy. If none of them interest you, please still select the best option.</li></ol></div>
-  <div class="q first" data-req="chosen_${L}">${cards(L)}<p class="err">Please choose one shirt ("Choose this one").</p></div>
-  ${Q("Was there a shirt in this list whose cut you liked, but whose colour or print you didn't?", radios(`colourhid_${L}`, ["Yes","No"]), { req: `colourhid_${L}` })}` });
-const chosenScreen = L => ({ id: `chosen${L}`, part: "Part 2 · Your two lists", title: `List ${L}: the shirt you chose`, render: () => `
-  <div class="intro"><p>Please answer the following questions about the shirt you chose.</p></div>
+  <div class="intro"><p>Take your time looking at the ten tops below. Tap or click a photo to see it larger.</p><ol><li>Select <b>“Would fit like mine”</b> for every top that you believe would fit similarly to your reference top. If none would, leave them all blank.</li><li>Select the <b>one</b> top you would be most likely to buy. If none of them interest you, please still select the best option.</li></ol></div>
+  <div class="q first" data-req="chosen_${L}">${cards(L)}<p class="err">Please choose one top ("Choose this one").</p></div>
+  ${Q("Was there a top in this list whose cut you liked, but whose colour or print you didn't?", radios(`colourhid_${L}`, ["Yes","No"]), { req: `colourhid_${L}` })}` });
+const chosenScreen = L => ({ id: `chosen${L}`, part: "Part 2 · Your two lists", title: `List ${L}: the top you chose`, render: () => `
+  <div class="intro"><p>Please answer the following questions about the top you chose.</p></div>
   ${picked(L)}
-  ${Q("How well do you expect this shirt to fit you?", likert(`h1_${L}`, H1), { req: likertKeys(`h1_${L}`, 3), err: "Please answer every row." })}
-  ${Q("Imagine you are shopping for this shirt. How likely would you be to buy it?", bipolar(`h2_${L}`, H2), { req: `h2_${L}` })}
-  ${Q("Would anything make you hesitate to buy this shirt?", checks(`barrier_${L}`, BARRIERS) + ((A[`barrier_${L}`] || []).includes(OTHER) ? `<div class="other-field">${field(`barrier_other_${L}`, "text", 'maxlength="200" aria-label="Please specify"')}</div>` : ""), { hint: "Tick all that apply. Leave blank if none apply.", ...((A[`barrier_${L}`] || []).includes(OTHER) ? { req: `barrier_other_${L}`, err: "Please fill in what “Other” means for you." } : {}) })}
-  ${Q("Thinking about how you chose this shirt:", likert(`h3_${L}`, H3), { req: likertKeys(`h3_${L}`, 3), err: "Please answer every row." })}
-  ${Q("Imagine you ordered this shirt:", likert(`h4_${L}`, H4, 1, LIKELY7), { req: likertKeys(`h4_${L}`, 2), err: "Please answer every row." })}
-  ${Q("About this shirt:", `<div style="display:grid;gap:12px"><div style="display:grid;gap:6px">I know this brand. ${radios(`fam_brand_${L}`, ["Yes","No"])}</div><div style="display:grid;gap:6px">I have seen this exact shirt before. ${radios(`fam_seen_${L}`, ["Yes","No","Not sure"])}</div></div>`, { req: `fam_brand_${L} fam_seen_${L}`, err: "Please answer both." })}` });
+  ${Q("How well do you expect this top to fit you?", likert(`h1_${L}`, H1), { req: likertKeys(`h1_${L}`, 3), err: "Please answer every row." })}
+  ${Q("Imagine you are shopping for this top. How likely would you be to buy it?", bipolar(`h2_${L}`, H2), { req: `h2_${L}` })}
+  ${Q("Would anything make you hesitate to buy this top?", checks(`barrier_${L}`, BARRIERS) + ((A[`barrier_${L}`] || []).includes(OTHER) ? `<div class="other-field">${field(`barrier_other_${L}`, "text", 'maxlength="200" aria-label="Please specify"')}</div>` : ""), { hint: "Tick all that apply. Leave blank if none apply.", ...((A[`barrier_${L}`] || []).includes(OTHER) ? { req: `barrier_other_${L}`, err: "Please fill in what “Other” means for you." } : {}) })}
+  ${Q("Thinking about how you chose this top:", likert(`h3_${L}`, H3), { req: likertKeys(`h3_${L}`, 3), err: "Please answer every row." })}
+  ${Q("Imagine you ordered this top:", likert(`h4_${L}`, H4, 1, LIKELY7), { req: likertKeys(`h4_${L}`, 2), err: "Please answer every row." })}
+  ${Q("About this top:", `<div style="display:grid;gap:12px"><div style="display:grid;gap:6px">I know this brand. ${radios(`fam_brand_${L}`, ["Yes","No"])}</div><div style="display:grid;gap:6px">I have seen this exact top before. ${radios(`fam_seen_${L}`, ["Yes","No","Not sure"])}</div></div>`, { req: `fam_brand_${L} fam_seen_${L}`, err: "Please answer both." })}` });
 const P2 = [
 { id: "welcome2", part: "Part 2 · Your two lists", title: "Welcome back", render: () => `
   <div class="intro">
-    <p>This part simulates an online shopping experience. On the next pages, you will see two different lists of 10 shirts, one after the other. In each list, first mark any shirts that you think would fit similarly to your reference shirt, then choose the one shirt you would be most likely to buy.</p>
+    <p>This part simulates an online shopping experience. On the next pages, you will see two different lists of 10 tops, one after the other. In each list, first mark any tops that you think would fit similarly to your reference top, then choose the one top you would be most likely to buy.</p>
     <p>Prices are shown in euros and sizes are EU sizes. In this scenario, returns are free within 30 days.</p>
   </div>` },
 listScreen("A"), chosenScreen("A"), listScreen("B"), chosenScreen("B"),
 { id: "compare", part: "Part 2 · Your two lists", title: "Comparing the lists", render: () => `
   <div class="mini-lists">${mini("A")}${mini("B")}</div>
-  ${Q("If you were shopping for a shirt in general, which list would you rather shop from?", radios("pref_overall", ["List A","List B"]), { first: true, req: "pref_overall" })}
+  ${Q("If you were shopping for a T-shirt or top in general, which list would you rather shop from?", radios("pref_overall", ["List A","List B"]), { first: true, req: "pref_overall" })}
   ${Q("Why?", area("why_list", "Why this list"), { optional: true })}
-  ${Q("If you were shopping for a shirt that fits similarly to your reference shirt, which list would you rather shop from?", radios("pref_fit", ["List A","List B"]), { req: "pref_fit" })}
-  ${Q("Is there anything else you would like to share, for example about the fit of the shirts or what you look for when buying a shirt?", area("other", "Other comments"), { optional: true })}` },
+  ${Q("If you were shopping for a top that fits similarly to your reference top, which list would you rather shop from?", radios("pref_fit", ["List A","List B"]), { req: "pref_fit" })}
+  ${Q("Is there anything else you would like to share, for example about the fit of the tops or what you look for when buying a T-shirt or top?", area("other", "Other comments"), { optional: true })}` },
 { id: "debrief", part: "Part 2 · Your two lists", title: "Thank you", submit: true, render: () => `
   <div class="intro">
     <p>Thank you for taking part.</p>
-    <p><b>How the lists were made:</b> One list was chosen by a model that looks for shirts with a similar fit to the shirt you described. The other list showed the shirts that were most popular in the same online shop, the same for everyone. The aim was to evaluate whether a reference shirt can improve the shopping experience.</p>
+    <p><b>How the lists were made:</b> One list was chosen by a model that looks for tops with a similar fit to the top you described. The other list showed the T-shirts and tops that were most popular in the same online shop, the same for everyone. The aim was to evaluate whether a reference top can improve the shopping experience.</p>
   </div>
   <div class="tryon">
-    <h2>Would you like to try on your two chosen shirts?</h2>
-    <p>In an additional part, about 10 participants in Germany will receive the two shirts they chose, try them on and evaluate the fit (about 20 minutes, in person or by video call). One shirt is then returned free of charge, and the other is yours to keep as a thank-you.</p>
+    <h2>Would you like to try on your two chosen tops?</h2>
+    <p>In an additional part, about 10 participants in Germany will receive the two tops they chose, try them on and evaluate the fit (about 20 minutes, in person or by video call). One top is then returned free of charge, and the other is yours to keep as a thank-you.</p>
   ${Q("Are you interested in the try-on part?", radios("tryon", ["Yes, please contact me","No, thank you"]), { first: true, req: "tryon" })}
   </div>` },
 { id: "end2", part: "Done", title: "Your answers have been sent", end: true, render: () => `
   ${doneMark}
   <div class="intro"><p>You can close this page now.${A.tryon === "Yes, please contact me" ? " About the try-on, you will be contacted by e-mail." : ""}</p></div>` }
 ];
-const messageScreen = (title, html) => ({ id: "msg", part: PART === 1 ? "Part 1 · Your shirt" : "Part 2 · Your two lists", title, end: true, render: () => `<div class="intro">${html}</div>` });
+const messageScreen = (title, html) => ({ id: "msg", part: PART === 1 ? "Part 1 · Your top" : "Part 2 · Your two lists", title, end: true, render: () => `<div class="intro">${html}</div>` });
 
 /* ===== Demo lists (only used with ?demo or before the API is set) ======== */
 const demoImg = (fill, worn) => "data:image/svg+xml," + encodeURIComponent(worn
@@ -430,7 +446,8 @@ function validate() {
   });
   if (extra === false && !firstBad) firstBad = el.querySelector(".q[data-req]");
   if (extra === false && firstBad) firstBad.classList.add("missing");
-  if (firstBad) { firstBad.scrollIntoView({ block: "center", behavior: "smooth" }); setStatus("Please complete the marked question.", true); return false; }
+  if (!firstBad) checkMsg = "";
+  if (firstBad) { firstBad.scrollIntoView({ block: "center", behavior: "smooth" }); setStatus(checkMsg && el.querySelectorAll(".q.missing").length === 1 ? checkMsg : "Please complete the marked question.", true); checkMsg = ""; return false; }
   return true;
 }
 
@@ -438,7 +455,7 @@ function flatAnswers() {
   const out = {};
   const skip = new Set(["email"]);
   if (PART === 1) {
-    if (A.worn_way !== "A link to the shirt in an online shop") skip.add("shop_url");
+    if (A.worn_way !== "A link to the top in an online shop") skip.add("shop_url");
     if (A.consent) { skip.add("consent"); out.consent = (A.consent || []).length === 2 ? "both" : "incomplete"; }
   }
   for (const [k, v] of Object.entries(A)) { if (skip.has(k)) continue; out[k] = Array.isArray(v) ? v.slice().sort().join("; ") : v; }
@@ -451,6 +468,7 @@ function flatAnswers() {
   tick();
   out.t_total_s = Math.round((Date.now() - T.start) / 1000);
   for (const [k, v] of Object.entries(T.per)) out[`t_${k}_s`] = Math.round(v);
+  out.instrument = "v1.1";
   out.device = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "mobile" : "desktop";
   return out;
 }
@@ -458,7 +476,7 @@ function photosToSend() {
   // Only the photos that belong to the answers given (a photo from a branch the participant left is not sent).
   const keep = ["photo_flat", "photo_label"];
   if (A.worn_way === "A photo of me wearing it") keep.push("photo_worn");
-  if (A.worn_way === "A picture of the shirt worn by a model (e.g. a screenshot)") keep.push("photo_model");
+  if (A.worn_way === "A picture of the top worn by a model (e.g. a screenshot)") keep.push("photo_model");
   return Object.fromEntries(keep.filter(k => F[k]).map(k => [k.replace("photo_", ""), F[k].b64]));
 }
 async function post(payload) {
@@ -518,7 +536,7 @@ el.addEventListener("click", e => {
   b.closest(".q").classList.remove("missing");
 });
 
-// Enlarged view of one shirt (both photos); the number of enlargements per list is kept as zooms_<L>.
+// Enlarged view of one top (both photos); the number of enlargements per list is kept as zooms_<L>.
 const lb = document.createElement("dialog"); lb.className = "lb"; document.body.appendChild(lb);
 lb.addEventListener("click", e => { if (e.target === lb || e.target.closest(".lb-close")) lb.close(); });
 lb.addEventListener("close", () => { if (lb._from) lb._from.focus(); });
