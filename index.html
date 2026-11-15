@@ -214,6 +214,7 @@ const params = new URLSearchParams(location.search);
 const PID = (params.get("pid") || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 const DEMO = params.has("demo") || !CONFIG.API;
 const PART = PID || params.get("part") === "2" ? 2 : 1;
+const CONSENT = ["I have read the information above and agree to take part.", "I agree that the photos I upload (my top, and me wearing it if I choose that option) are used to extract the top's features and are then deleted."];
 const STORE_KEY = PART === 1 ? "fitstudy-p1" : `fitstudy-p2-${PID || "demo"}`;
 
 /* ===== Content =========================================================== */
@@ -241,6 +242,17 @@ const F = {};               // photos: key -> { b64, preview }
 let LISTS = null;           // part 2: { A: [...10], B: [...10] }
 const T = { start: Date.now(), screen: Date.now(), per: {} };
 try { const s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s && typeof s === "object") A = s; } catch (e) {}
+// v1 → v1.1 (D53): answers saved in the browser before the wording change still hold the old option texts.
+const V1_TEXT = {
+  "I agree that the photos I upload (my shirt, and me wearing it if I choose that option) are used to extract the shirt's features and are then deleted.": CONSENT[1],
+  "A link to the shirt in an online shop": "A link to the top in an online shop",
+  "A picture of the shirt worn by a model (e.g. a screenshot)": "A picture of the top worn by a model (e.g. a screenshot)",
+  "I already own a very similar shirt": "I already own a very similar top"
+};
+for (const [k, v] of Object.entries(A)) {
+  if (typeof v === "string" && V1_TEXT[v]) A[k] = V1_TEXT[v];
+  else if (Array.isArray(v)) A[k] = [...new Set(v.map(x => V1_TEXT[x] || x))];
+}
 const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(A)); } catch (e) {} };
 const forget = () => { try { localStorage.removeItem(STORE_KEY); } catch (e) {} };
 
@@ -287,9 +299,9 @@ const P1 = [
     <p><b>How it works:</b> First, you describe one T-shirt or top you own whose fit you like (about 10 minutes). Within two days you will receive a personal link. There you will see two lists of tops from an online shop, choose one from each, and answer some questions (about 15 minutes).</p>
   </div>
   <p class="disclaimer"><b>Your data:</b> Your name is not stored with your answers. Your e-mail address is used only to send you the link to part 2 and is kept separately from your answers. Your photos are used only to describe your top: features are extracted, such as its length and how wide the body and sleeves are. Once the features have been extracted, the photos are deleted. Taking part is voluntary, and you can stop or withdraw at any time without giving a reason.</p>
-  ${Q("Consent", checks("consent", ["I have read the information above and agree to take part.", "I agree that the photos I upload (my top, and me wearing it if I choose that option) are used to extract the top's features and are then deleted."], true), { req: "consent", err: "Please tick both boxes to take part." })}
+  ${Q("Consent", checks("consent", CONSENT, true), { req: "consent", err: "Please tick both boxes to take part." })}
   <p class="disclaimer" style="border-top:0;padding-top:0"><b>Contact:</b> ${esc(CONFIG.CONTACT)}</p>`,
-  check: () => (A.consent || []).length === 2 },
+  check: () => CONSENT.every(c => (A.consent || []).includes(c)) },
 { id: "elig", part: "Part 1 · Your top", title: "A few questions first", render: () => `
   ${Q("Do you own a short-sleeve T-shirt or top that fits you the way you like?", radios("elig_own", ["Yes","No"]), { first: true, req: "elig_own" })}
   ${Q("Where do you live?", radios("elig_country", ["Germany","Other EU country","United Kingdom","USA","Other"]), { req: "elig_country" })}
@@ -456,7 +468,7 @@ function flatAnswers() {
   const skip = new Set(["email"]);
   if (PART === 1) {
     if (A.worn_way !== "A link to the top in an online shop") skip.add("shop_url");
-    if (A.consent) { skip.add("consent"); out.consent = (A.consent || []).length === 2 ? "both" : "incomplete"; }
+    if (A.consent) { skip.add("consent"); out.consent = CONSENT.every(c => A.consent.includes(c)) ? "both" : "incomplete"; }
   }
   for (const [k, v] of Object.entries(A)) { if (skip.has(k)) continue; out[k] = Array.isArray(v) ? v.slice().sort().join("; ") : v; }
   if (PART === 2) for (const L of ["A", "B"]) {
