@@ -296,7 +296,7 @@ const P1 = [
 { id: "welcome", part: "Part 1 · Your top", title: "Welcome", render: () => `
   <div class="intro">
     <p>Thank you for your interest. This study is part of my master's thesis at HWR Berlin and looks at whether a top you already own and like can help you find new tops online.</p>
-    <p><b>How it works:</b> First, you describe one T-shirt or top you own whose fit you like (about 10 minutes). Within two days you will receive a personal link. There you will see two lists of tops from an online shop, choose one from each, and answer some questions (about 15 minutes).</p>
+    <p><b>How it works:</b> First, you describe one T-shirt or top you own whose fit you like (about 10 minutes). Within two days you will receive a personal link. There you will see two lists of tops from an online shop, choose one from each, and answer some questions (about 10 minutes).</p>
   </div>
   <p class="disclaimer"><b>Your data:</b> Your name is not stored with your answers. Your e-mail address is used only to send you the link to part 2 and is kept separately from your answers. Your photos are used only to describe your top: features are extracted, such as its length and how wide the body and sleeves are. Once the features have been extracted, the photos are deleted. Taking part is voluntary, and you can stop or withdraw at any time without giving a reason.</p>
   ${Q("Consent", checks("consent", CONSENT, true), { req: "consent", err: "Please tick both boxes to take part." })}
@@ -360,7 +360,7 @@ const P1 = [
   check: () => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(A.email || "") || "email" },
 { id: "end1", part: "Part 1 · Your top", title: "Thank you, that's part 1", end: true, render: () => `
   ${doneMark}
-  <div class="intro"><p>Your top will now be reviewed. Within two days you will receive an e-mail with your personal link to part 2 (about 15 minutes).</p></div>` }
+  <div class="intro"><p>Your top will now be reviewed. Within two days you will receive an e-mail with your personal link to part 2 (about 10 minutes).</p></div>` }
 ];
 const screenOut = reason => ({ id: "screenout", part: "Part 1 · Your top", title: "Thank you", end: true, render: () => `
   <div class="intro"><p>Thank you for your interest. Unfortunately, you don't meet the requirements for this study, so it ends here.</p><p>You can close this page now.</p></div>` });
@@ -400,16 +400,17 @@ listScreen("A"), chosenScreen("A"), listScreen("B"), chosenScreen("B"),
 { id: "debrief", part: "Part 2 · Your two lists", title: "Thank you", submit: true, render: () => `
   <div class="intro">
     <p>Thank you for taking part.</p>
-    <p><b>How the lists were made:</b> One list was chosen by a model that looks for tops with a similar fit to the top you described. The other list showed the T-shirts and tops that were most popular in the same online shop, the same for everyone. The aim was to evaluate whether a reference top can improve the shopping experience.</p>
+    <p><b>How the lists were made:</b> Both lists come from the same catalogue of women's T-shirts and tops on Zalando. One list was chosen by a model that looks for tops with a similar fit to the top you described. The other list showed the T-shirts and tops that were most popular on Zalando, the same for everyone. The aim was to evaluate whether a reference top can improve the shopping experience.</p>
   </div>
+  ${Q("Would you like to receive the list of tops most similar to your reference top by e-mail?", radios("send_links", ["Yes, please send them","No, thank you"]), { first: true, req: "send_links" })}
   <div class="tryon">
     <h2>Would you like to try on your two chosen tops?</h2>
-    <p>In an additional part, about 10 participants in Germany will receive the two tops they chose, try them on and evaluate the fit (about 20 minutes, in person or by video call). One top is then returned free of charge, and the other is yours to keep as a thank-you.</p>
+    <p>In an additional part, about 10 participants in Germany will receive the two tops they chose, try them on and evaluate the fit (about 20 minutes). One top is then returned free of charge, and the other is yours to keep as a thank-you.</p>
   ${Q("Are you interested in the try-on part?", radios("tryon", ["Yes, please contact me","No, thank you"]), { first: true, req: "tryon" })}
   </div>` },
 { id: "end2", part: "Done", title: "Your answers have been sent", end: true, render: () => `
   ${doneMark}
-  <div class="intro"><p>You can close this page now.${A.tryon === "Yes, please contact me" ? " About the try-on, you will be contacted by e-mail." : ""}</p></div>` }
+  <div class="intro"><p>You can close this page now.${A.send_links === "Yes, please send them" ? " The list of similar tops will be sent to you by e-mail." : ""}${A.tryon === "Yes, please contact me" ? " About the try-on, you will be contacted by e-mail." : ""}</p></div>` }
 ];
 const messageScreen = (title, html) => ({ id: "msg", part: PART === 1 ? "Part 1 · Your top" : "Part 2 · Your two lists", title, end: true, render: () => `<div class="intro">${html}</div>` });
 
@@ -481,7 +482,7 @@ function flatAnswers() {
   tick();
   out.t_total_s = Math.round((Date.now() - T.start) / 1000);
   for (const [k, v] of Object.entries(T.per)) out[`t_${k}_s`] = Math.round(v);
-  out.instrument = "v1.2";
+  out.instrument = "v1.3";
   out.device = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "mobile" : "desktop";
   return out;
 }
