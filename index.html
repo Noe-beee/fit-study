@@ -312,7 +312,7 @@ const P1 = [
   const way = A.worn_way, ways = ["A photo of me wearing it", "A link to the top in an online shop", "A picture of the top worn by a model (e.g. a screenshot)"];
   const req = way === ways[0] ? "worn_way photo_worn" : way === ways[1] ? "worn_way shop_url" : way === ways[2] ? "worn_way photo_model" : "worn_way";
   return `
-  <div class="intro"><p>Think of one short-sleeve T-shirt or top you own whose fit you like. This is your <b>reference top</b>. It can have any neckline (crew, V, scoop, boat …), but please don't choose a button-up shirt or blouse.</p>
+  <div class="intro"><p>Think of one short-sleeve T-shirt or short-sleeve top you own whose fit you like. This is your <b>reference top</b>. It can have any neckline (crew, V, scoop, boat …), but please don't choose a button-up shirt or blouse.</p>
   <p>For this top you will need:</p><ul><li>a photo of it lying flat</li><li>its width and length, measured in cm</li><li>its size (as on the label, or your best guess)</li><li>a view of it being worn (can be a model image, a link to the top in an online shop, or a photo of you wearing it)</li></ul></div>
   ${Q("1. Take a photo of the top lying flat", upload("photo_flat", "Lying flat, front side up", "Smooth it out, sleeves to the sides, the whole top in the picture, nothing else on the surface.", "flat"), { first: true, req: "photo_flat", err: "Please add a photo of the top lying flat.", hint: "Lay the top on a plain, flat surface (such as on the bed or floor) and hold the phone straight above it." })}
   ${Q("2. Measure the top while it lies flat", `<div class="measure">${measureSVG}<div style="display:grid;gap:12px"><p class="hint">Use a tape measure, in cm.<br><b>Width:</b> straight across, from armpit to armpit.<br><b>Length:</b> from the highest point of the shoulder, next to the collar, straight down to the hem.</p><div class="inline"><label>Width ${field("width_cm", "number", 'step="0.5" min="0" inputmode="decimal" style="width:90px"')} <span class="unit">cm</span></label><label>Length ${field("length_cm", "number", 'step="0.5" min="0" inputmode="decimal" style="width:90px"')} <span class="unit">cm</span></label></div></div></div>`, { req: "width_cm length_cm", err: MEASURE_ERR })}
@@ -482,7 +482,7 @@ function flatAnswers() {
   tick();
   out.t_total_s = Math.round((Date.now() - T.start) / 1000);
   for (const [k, v] of Object.entries(T.per)) out[`t_${k}_s`] = Math.round(v);
-  out.instrument = "v1.3";
+  out.instrument = "v1.4";
   out.device = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "mobile" : "desktop";
   return out;
 }
